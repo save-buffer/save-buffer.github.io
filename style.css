@@ -1,0 +1,133 @@
+body
+{
+    font-family: 'Raleway', sans-serif;
+    color: #FFFFFF;
+    background-color: #28283E;
+}
+
+#navigator-wrapper
+{
+    width: 100%;
+    height: 100%;
+}
+
+#name
+{
+    text-align: center;
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    font-size: 18pt;
+    transform: translate(-50%, -50%);
+}
+
+#first-section
+{
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 30%;
+    left: 0%;
+    color: #F70A6E;
+    opacity: 0.3;
+    clip-path: polygon(0% 0%, 50% 0%, 0% 100%);
+}
+
+#second-section
+{
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 30%;
+    left: 0%;
+    background: #F70A6E;
+    color: #F70A6E;
+    clip-path: polygon(50% 0%, 50% 0%, 0% 100%);
+}
+
+#third-section
+{
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 30%;
+    left: 0%;
+    background: #F70A6E;
+    color: #F70A6E;
+    clip-path: polygon(0% 0%, 50% 0%, 0% 100%);
+}
+
+#fourth-section
+{
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 30%;
+    left: 0%;
+    background: #F70A6E;
+    color: #F70A6E;
+    clip-path: polygon(0% 0%, 50% 0%, 0% 100%);
+}
+
+#fifth-section
+{
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 30%;
+    left: 0%;
+    background: #F70A6E;
+    color: #F70A6E;
+    clip-path: polygon(0% 0%, 50% 0%, 0% 100%);
+}
+
+#navigator
+{
+    list-style: none;
+    display: block;
+    position: absolute;
+    top:  30%;
+    left: 50%;
+    width:  12em;
+    height: 12em;
+    margin-left: -6em;
+}
+
+#navigator li
+{
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    text-align: center;
+    width: 12em;
+}
+
+#navigator li:nth-child(1)
+{
+    transform: rotate(0deg) translate(100%) rotate(0deg);
+}
+
+#navigator li:nth-child(2)
+{
+    transform: rotate(45deg) translate(100%) rotate(-45deg)
+}
+
+#navigator li:nth-child(3)
+{
+    transform: rotate(90deg) translate(100%) rotate(-90deg)
+}
+
+#navigator li:nth-child(4)
+{
+    transform: rotate(135deg) translate(100%) rotate(-135deg)
+}
+
+#navigator li:nth-child(5)
+{
+    transform: rotate(180deg) translate(100%) rotate(-180deg)
+}
