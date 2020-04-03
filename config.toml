@@ -41,7 +41,7 @@ paginate = 5
   [languages.en]
     languageName = "English"
     title = "Sasha Krassovsy's Website"
-    subtitle = "A simple, retro theme for Hugo"
+    subtitle = ""
     owner = ""
     keywords = ""
     copyright = ""
