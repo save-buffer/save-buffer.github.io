@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2022-01-04 Tue 13:56 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>All About Bloom Filters for Hash Joins</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Sasha" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="css/stylesheet.css"/>
+<script type="text/javascript">
+// @license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt Public Domain
+<!--/*--><![CDATA[/*><!--*/
+     function CodeHighlightOn(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.add("code-highlighted");
+         target.classList.add("code-highlighted");
+       }
+     }
+     function CodeHighlightOff(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.remove("code-highlighted");
+         target.classList.remove("code-highlighted");
+       }
+     }
+    /*]]>*///-->
+// @license-end
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">All About Bloom Filters for Hash Joins</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org42a9af9">1. Introduction</a>
+<ul>
+<li><a href="#org92b335e">1.1. Formal Definition</a>
+<ul>
+<li><a href="#org38f032b">1.1.1. Algorithm Description</a></li>
+<li><a href="#orgaaca775">1.1.2. Choosing \(m\) and \(k\)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org1b430ac">2. Binary Hash Join</a>
+<ul>
+<li><a href="#orgbc83863">2.1. Build-side Bloom filter</a></li>
+<li><a href="#org71d780e">2.2. Probe-side Bloom filter</a></li>
+<li><a href="#orgfff8796">2.3. Fuzzy Hash Join</a></li>
+</ul>
+</li>
+<li><a href="#orga7a2be1">3. Chain of Binary Hash Joins</a>
+<ul>
+<li><a href="#org56508c1">3.1. Bloom Filter Pushdown</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org42a9af9" class="outline-2">
+<h2 id="org42a9af9"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+Bloom filter is a probabilistic data structure which provides an efficient way to query whether an element is a member
+of a set. A query to a Bloom filter can return a false positive, where the query returns true when the queried element
+is not actually in the set. When the probability of membership is low, a Bloom filter will frequently return the
+correct result. Bloom filters are thus useful for querying membership when the backing structure (e.g. a hash table) is
+slow to query. 
+</p>
+</div>
+
+<div id="outline-container-org92b335e" class="outline-3">
+<h3 id="org92b335e"><span class="section-number-3">1.1</span> Formal Definition</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+Bloom filters are parameterized by \(n, \epsilon\), where \(n\) is the number of elements to be inserted and
+\(\epsilon\) is the desired false positive rate. An \((n, \epsilon)-\) Bloom filter \(B\) over some set \(S\) provides two
+operations. <code>insert</code> takes some \(x \in S\) and inserts it into the structure. <code>query</code> takes some \(y \in S\) and (assuming
+\(|B| \leq n\)) returns:
+</p>
+<ul class="org-ul">
+<li><code>true</code> if <code>insert(y)</code> was called previously, or if not, with probability at most \(\epsilon\).</li>
+<li><code>false</code> if <code>insert(y)</code> was not called previously with probability at least \((1 - \epsilon)\)</li>
+</ul>
+</div>
+
+<div id="outline-container-org38f032b" class="outline-4">
+<h4 id="org38f032b"><span class="section-number-4">1.1.1</span> Algorithm Description</h4>
+<div class="outline-text-4" id="text-1-1-1">
+<p>
+An \((n, \epsilon)-\) Bloom filter \(B\) is an array of \(m\) bits and \(k\) hash functions, where \(m\) and \(k\) are picked in some
+combination to guarantee the false positive rate is at most \(\epsilon\) when \(|B| \leq n\).
+</p>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">uint64_t</span> <span style="color: #C440C3;">ComputeHash</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span>, <span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">hash_idx</span>);
+
+<span style="color: #8CFFAF;">struct</span> <span style="color: #3BD9FF;">BloomFilter</span>
+{
+    <span style="color: #3BD9FF;">int</span> <span style="color: #C440C3;">ComputeNumBits</span>();
+    <span style="color: #3BD9FF;">int</span> <span style="color: #C440C3;">ComputeNumHashFns</span>();
+
+    <span style="color: #C440C3;">BloomFilter</span>(<span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">n</span>, <span style="color: #3BD9FF;">float</span> <span style="color: #FCE8CE;">eps</span>) : n(n), epsilon(eps)
+    {
+        <span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">m</span> = ComputeNumBits();
+        bv = <span style="color: #8CFFAF;">new</span> <span style="color: #3BD9FF;">uint8_t</span>[(m + 7) / 8];
+    }
+
+    ~<span style="color: #C440C3;">BloomFilter</span>() { <span style="color: #8CFFAF;">delete</span>[] bv }
+
+    <span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">n</span>;
+    <span style="color: #3BD9FF;">float</span> <span style="color: #FCE8CE;">epsilon</span>;
+
+    <span style="color: #3BD9FF;">void</span> <span style="color: #C440C3;">Insert</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span>);
+    <span style="color: #3BD9FF;">bool</span> <span style="color: #C440C3;">Query</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span>);
+
+    <span style="color: #3BD9FF;">uint8_t</span> *<span style="color: #FCE8CE;">bv</span>;
+};
+</pre>
+</div>
+
+<p>
+To <code>insert</code>, we simply evaluate all \(k\) hash functions on the inserted element and set the corresponding bit in the bit vector.
+</p>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">void</span> <span style="color: #457EFF;">BloomFilter</span>::<span style="color: #C440C3;">Insert</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span>)
+{
+    <span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">k</span> = ComputeNumHashFns();
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">i</span> = 0; i &lt; k; i++)
+    {
+        <span style="color: #3BD9FF;">uint64_t</span> <span style="color: #FCE8CE;">hash</span> = ComputeHash(row, i) % m;
+        <span style="color: #3BD9FF;">uint64_t</span> <span style="color: #FCE8CE;">bit_idx</span> = hash % 8;
+        <span style="color: #3BD9FF;">uint64_t</span> <span style="color: #FCE8CE;">byte_idx</span> = hash / 8;
+        bv[byte_idx] |= (1 &lt;&lt; bit_idx);
+    }
+}
+</pre>
+</div>
+
+<p>
+Similarly, to <code>query</code> we just check if all of the corresponding bits are set in the bit vector.
+</p>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">bool</span> <span style="color: #457EFF;">BloomFilter</span>::<span style="color: #C440C3;">Query</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span>)
+{
+    <span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">k</span> = ComputeNumHashFns();
+    <span style="color: #3BD9FF;">bool</span> <span style="color: #FCE8CE;">result</span> = <span style="color: #457EFF;">true</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">i</span> = 0; i &lt; k; i++)
+    {
+        <span style="color: #3BD9FF;">uint64_t</span> <span style="color: #FCE8CE;">hash</span> = ComputeHash(row, i) % m;
+        <span style="color: #3BD9FF;">uint64_t</span> <span style="color: #FCE8CE;">bit_idx</span> = hash % 8;
+        <span style="color: #3BD9FF;">uint64_t</span> <span style="color: #FCE8CE;">byte_idx</span> = hash / 8;
+        result &amp;= (bv[byte_idx] &gt;&gt; bit_idx) &amp; 1;
+    }
+    <span style="color: #8CFFAF;">return</span> result;
+}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgaaca775" class="outline-4">
+<h4 id="orgaaca775"><span class="section-number-4">1.1.2</span> Choosing \(m\) and \(k\)</h4>
+<div class="outline-text-4" id="text-1-1-2">
+<p>
+For a given \(n, \epsilon\), we'd like to pick \(m, k\) such that \(m\) and \(k\) are minimized while respecting the bound on
+false positive rate. It has been <a href="https://en.wikipedia.org/wiki/Bloom_filter#Optimal_number_of_hash_functions">shown</a> that the optimal number of bits is \(m = -1.44n\log_2{\epsilon}\) and the optimal
+number of hash functions is \(k = -\log_2{\epsilon}\). Interestingly, \(k\) is independent of \(n\). Simply translating these
+bounds completes the bloom filter:
+</p>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #8CFFAF;">constexpr</span> <span style="color: #3BD9FF;">int</span> <span style="color: #457EFF;">BloomFilter</span>::<span style="color: #C440C3;">ComputeNumBits</span>()
+{
+    <span style="color: #8CFFAF;">return</span> <span style="color: #8CFFAF;">static_cast</span>&lt;<span style="color: #3BD9FF;">int</span>&gt;(-1.44 * n * <span style="color: #457EFF;">std</span>::log2(epsilon) + 0.5);
+}
+
+<span style="color: #8CFFAF;">constexpr</span> <span style="color: #3BD9FF;">int</span> <span style="color: #457EFF;">BloomFilter</span>::<span style="color: #C440C3;">ComputeNumHashFns</span>()
+{
+    <span style="color: #8CFFAF;">return</span> <span style="color: #8CFFAF;">static_cast</span>&lt;<span style="color: #3BD9FF;">int</span>&gt;(-<span style="color: #457EFF;">std</span>::log2(epsilon) + 0.5);
+}
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org1b430ac" class="outline-2">
+<h2 id="org1b430ac"><span class="section-number-2">2</span> Binary Hash Join</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Hash join has two sides: build and probe (also called "right" and "left" respectively). We build a hash table mapping from key
+columns to build-side rows. Then, for each probe-side key, hash it, lookup the matching build-side row, and output the matching
+rows (assuming an inner join).
+</p>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">Dataset</span> <span style="color: #C440C3;">InnerHashJoin</span>(<span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">build_side</span>, <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">probe_side</span>)
+{
+    <span style="color: #3BD9FF;">HashTable</span> <span style="color: #FCE8CE;">table</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : build_side)
+        table.Insert(row);
+
+    <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">result</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : probe_side)
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">match</span> : table.Probe(row)) <span style="color: #337373;">// </span><span style="color: #337373;">You can have multiple build-side matches per probe-side row</span>
+            result.Insert(match + row); <span style="color: #337373;">// </span><span style="color: #337373;">Assuming `+` concatenates two rows</span>
+    <span style="color: #8CFFAF;">return</span> result;
+}
+</pre>
+</div>
+<p>
+In the context of a Hash Join, a bloom filter can be used to avoid performing a hash table lookup. There are two possibilities: 
+</p>
+<ul class="org-ul">
+<li>Build-side bloom filter, where a bloom filter is populated while building the hash table. During probing, each row is checked
+in the bloom filter first, and if <code>query</code> returns <code>false</code>, then the row is skipped.</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">Dataset</span> <span style="color: #C440C3;">InnerHashJoin_BuildSideBloomFilter</span>(<span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">build_side</span>, <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">probe_side</span>)
+{
+    <span style="color: #3BD9FF;">HashTable</span> <span style="color: #FCE8CE;">table</span>;
+    <span style="color: #3BD9FF;">BloomFilter</span> <span style="color: #FCE8CE;">bf</span>(build_side.size(), 0.01);
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : build_side)
+    {
+        bf.Insert(row);
+        table.Insert(row);
+    }
+
+    <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">result</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : probe_side)
+    {
+        <span style="color: #8CFFAF;">if</span>(bf.Query(row))
+            <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">match</span> : table.Probe(row)) <span style="color: #337373;">// </span><span style="color: #337373;">You can have multiple build-side matches per probe-side row</span>
+                result.Insert(match + row); <span style="color: #337373;">// </span><span style="color: #337373;">Assuming `+` concatenates two rows</span>
+    }
+    <span style="color: #8CFFAF;">return</span> result;
+}
+</pre>
+</div>
+<ul class="org-ul">
+<li>Probe-side bloom filter, where prior to building the hash table, a bloom filter is populated with probe-side rows.
+Then during the build phase, any build-side row that does not pass the bloom filter is skipped.</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">Dataset</span> <span style="color: #C440C3;">InnerHashJoin_ProbeSideBloomFilter</span>(<span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">build_side</span>, <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">probe_side</span>)
+{
+    <span style="color: #3BD9FF;">BloomFilter</span> <span style="color: #FCE8CE;">bf</span>(probe_side.size(), 0.01);
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : probe_side)
+        bf.Insert(row);
+
+    <span style="color: #3BD9FF;">HashTable</span> <span style="color: #FCE8CE;">table</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : build_side)
+        <span style="color: #8CFFAF;">if</span>(bf.Query(row))
+            table.Insert(row);
+
+    <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">result</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : probe_side)
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">match</span> : table.Probe(row)) <span style="color: #337373;">// </span><span style="color: #337373;">You can have multiple build-side matches per probe-side row</span>
+            result.Insert(match + row); <span style="color: #337373;">// </span><span style="color: #337373;">Assuming `+` concatenates two rows</span>
+    <span style="color: #8CFFAF;">return</span> result;
+}
+</pre>
+</div>
+<p>
+Whether either of these strategies is worth the overhead of constructing a bloom filter depends on four factors. In this analysis,
+we define them as follows:
+</p>
+<ul class="org-ul">
+<li>Selectivity \(s\) is the probability a given probe-side row will have a match.</li>
+<li>Cardinality \(c\) is the proportion of distinct values to total rows in a column. In particular, a cardinality of \(1\) means every
+row in a column is unique.</li>
+<li>Length of the data refers to the number of rows in a column. We denote the length of the probe side with \(P\) and that of
+the build side as \(B\).</li>
+<li>Size of the data refers to the physical memory footprint in bytes of the data.</li>
+</ul>
+<p>
+These factors intermix in numerous ways to provide varied performance characteristics. The length of the hash table is proportional
+to the cardinality and length of the build side. The length of the output is proportional to the selectivity and length of the
+probe side column.
+</p>
+
+<p>
+Additionally, the validity of using a Bloom filter depends on which side it's built and the type of join. Below, we'll investigate
+the validity of each side of filter for each type of join.
+</p>
+</div>
+
+<div id="outline-container-orgbc83863" class="outline-3">
+<h3 id="orgbc83863"><span class="section-number-3">2.1</span> Build-side Bloom filter</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+Build-side Bloom filter allows skipping hash table lookups during the probe phase. Thus we can expect the number of hash table
+lookups to be \(sP + \epsilon(1 - s)P \approx Ps\) for small \(\epsilon\). If \(c_T\) is the cost of a hash table lookup and
+\(c_F\) is the cost of a Bloom filter lookup, the total cost of the probe phase is \(c_FP + sc_TP = (c_F + sc_T)P\).
+</p>
+
+<p>
+Observe that the amount of work needed for a Bloom filter lookup is the same as a Bloom filter insert. If we let \(c_B\) be the
+cost per row during the build phase, we can derive the total cost of the join as \((c_F + c_B)B + (c_F + sc_T)P\).
+Assuming that \(c_F \ll c_T\) and \(c_F \ll c_B\), we see that the impact on build performance is negligible while the impact of
+\(c_T\) grows proportionally to \(s\). Further, notice that if \(B \geq P\), \(c_F\) might start to be non-negligible cost.
+Thus a build-side Bloom filter makes sense when \(s\) is small and \(B \ll P\). A build-side Bloom filter provides
+the following for each join type:
+</p>
+<ul class="org-ul">
+<li>Inner Join: A Bloom filter will with reducing the number of hash table lookups.</li>
+<li>Left Semijoin: Equivalent to inner join, except outputting only probe-side rows upon discovering a match.</li>
+<li>Right Semijoin: Equivalent to inner join, except outputting only build-side rows upon discovering a match.</li>
+<li>Left Antijoin: A build-side Bloom filter removes the need for a hash table entirely, since Bloom filters cannot return
+false negatives. Thus we only need to output a row for each Bloom filter miss.</li>
+<li>Right Antijoin: A build-side Bloom filter is useless here, as the filter only tells us if a left row is absent from the
+right, rather than vice versa.</li>
+<li>Left Outer Join: Similar to inner join, except we have to output on a Bloom filter miss.</li>
+<li>Right Outer Join: Not useful, as we'll still have to output everything from the hash table.</li>
+<li>Full Outer Join: Similar to Left Outer Join, except also having to output the build side anyway.</li>
+</ul>
+
+<p>
+Overall, a Build-side Bloom filter is useful when:
+</p>
+<ul class="org-ul">
+<li>\(s\) is small and \(P \gg B\)</li>
+<li>We are not performing a Right Antijoin or Right Outer Join.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org71d780e" class="outline-3">
+<h3 id="org71d780e"><span class="section-number-3">2.2</span> Probe-side Bloom filter</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+Probe-side Bloom filter allows you to make the hash table much smaller at the cost of having to perform an extra scan.
+A clever implementation of the Bloom filter can make the hash table and Bloom filter hashes equivalent, caching the probe
+side's hashes. The expected size of the hash table would then be \(sB + \epsilon(1 - s)B \approx sB\) for small \(\epsilon\).
+This could potentially make the hash table fit in a lower level of cache, reducing \(c_B\) from above.
+Going down the list again:
+</p>
+<ul class="org-ul">
+<li>Inner Join: Unaffected except for a lower \(c_T\).</li>
+<li>Left Semijoin: Same as Inner Join.</li>
+<li>Right Semijoin: Same as Inner Join.</li>
+<li>Left Antijoin: A probe-side Bloom filter is useless here, as we have to test for membership in the build side.</li>
+<li>Right Antijoin: A probe-side Bloom filter can remove the probe phase entirely, since a Bloom filter cannot return
+false negatives.</li>
+<li>Left Outer Join: Same as Inner Join.</li>
+<li>Right Outer Join: Same as Inner Join, except we output all rows that didn't pass the filter during the build phase.</li>
+<li>Full Outer Join: Same as Inner Join.</li>
+</ul>
+
+<p>
+Overall, a Probe-side Bloom filter is useful when:
+</p>
+<ul class="org-ul">
+<li>\(s\) is small and the hash table scaled down fits in a lower level of cache.</li>
+<li>We are not performing Left Antijoin.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgfff8796" class="outline-3">
+<h3 id="orgfff8796"><span class="section-number-3">2.3</span> Fuzzy Hash Join</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+The idea of a Fuzzy Hash Join is analogous to layering a Bloom filter over a build or probe: we perform a Hash Join
+using <i>only</i> Bloom filters before proceeding with the full join. It works like this:
+</p>
+<ol class="org-ol">
+<li>Build a build-side Bloom filter</li>
+<li>Build a probe-side Bloom filter as the probe side streams in, filtering out entries using the build-side Bloom filter</li>
+<li>Build the hash table using the probe-side Bloom filter</li>
+<li>Proceed with probing on this smaller hash table using the filtered probe side.</li>
+</ol>
+
+<p>
+In code:
+</p>
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">Dataset</span> <span style="color: #C440C3;">InnerHashJoin_Fuzzy</span>(<span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">build_side</span>, <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">probe_side</span>)
+{
+    <span style="color: #337373;">// </span><span style="color: #337373;">Step 1:</span>
+    <span style="color: #3BD9FF;">BloomFilter</span> <span style="color: #FCE8CE;">bf_build</span>(build_side.size(), 0.01);
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : build_side)
+        bf.Insert(row);
+
+    <span style="color: #337373;">// </span><span style="color: #337373;">Step 2:</span>
+    <span style="color: #3BD9FF;">BloomFilter</span> <span style="color: #FCE8CE;">bf_probe</span>(probe_side.size(), 0.01);
+    <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">filtered_probe</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : probe_side)
+        <span style="color: #8CFFAF;">if</span>(bf_build.Query(row))
+        {
+            bf_probe.Insert(row);
+            filtered_probe.Insert(row);
+        }
+
+    <span style="color: #337373;">// </span><span style="color: #337373;">Step 3:</span>
+    <span style="color: #3BD9FF;">HashTable</span> <span style="color: #FCE8CE;">table</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : build_side)
+        <span style="color: #8CFFAF;">if</span>(bf_probe.Query(row))
+            table.Insert(row);
+
+    <span style="color: #337373;">// </span><span style="color: #337373;">Step 4:</span>
+    <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">result</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : filtered_probe)
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">match</span> : table.Probe(row)) <span style="color: #337373;">// </span><span style="color: #337373;">You can have multiple build-side matches per probe-side row</span>
+            result.Insert(match + row); <span style="color: #337373;">// </span><span style="color: #337373;">Assuming `+` concatenates two rows</span>
+    <span style="color: #8CFFAF;">return</span> result;
+}
+</pre>
+</div>
+
+<p>
+Notice that no Bloom filter needs to be built during hash table build, as anything that would not pass a build-side
+Bloom filter would have been filtered out in step 2. 
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga7a2be1" class="outline-2">
+<h2 id="orga7a2be1"><span class="section-number-2">3</span> Chain of Binary Hash Joins</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+We will now explore applications of Bloom filters for a chain of binary joins, of the form \(R_1 \Join R_2 \Join \dots \Join R_m\).
+Conceptually, to evaluate this chain of joins, we build hash tables on \(R_2, \dots, R_m\). Then for each row in \(R_1\), we probe it
+in \(R_2\). For each match, we probe it in \(R_3\), and so on until \(R_m\). 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">Dataset</span> <span style="color: #C440C3;">InnerHashJoinChain</span>(<span style="color: #457EFF;">std</span>::<span style="color: #3BD9FF;">vector</span>&lt;<span style="color: #3BD9FF;">Dataset</span>&gt; <span style="color: #FCE8CE;">build_side</span>, <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">probe_side</span>)
+{
+    <span style="color: #457EFF;">std</span>::<span style="color: #3BD9FF;">vector</span>&lt;HashTable&gt; <span style="color: #FCE8CE;">tables</span>;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Dataset</span> &amp;<span style="color: #FCE8CE;">ds</span> : build_side)
+    {
+        <span style="color: #3BD9FF;">HashTable</span> <span style="color: #FCE8CE;">table</span>;
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : ds)
+            table.Insert(row);
+        tables.push_back(table);
+    }
+
+    <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">result</span> = probe_side;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">HashTable</span> &amp;<span style="color: #FCE8CE;">table</span> : tables)
+    {
+        <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">next</span>;
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : result)
+            <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">match</span> : table.Probe(row))
+                next.insert(match + row);
+        result = next;
+    }
+    <span style="color: #8CFFAF;">return</span> result;
+}
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org56508c1" class="outline-3">
+<h3 id="org56508c1"><span class="section-number-3">3.1</span> Bloom Filter Pushdown</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+Notice that for each \(R_{i - 1} \Join R_i \Join R_{i + 1}\), \((R_{i - 1} \Join R_i)\) must
+have some columns in common with \(R_{i + 1}\), since they are being joined. Since the hash
+table for \(R_{i + 1}\) is built before \((R_{i - 1} \Join R_i)\) is computed, it's possible
+to skip outputting rows from \((R_{i - 1} \Join R_i)\) which will be eliminated by the join
+with \(R_{i + 1}\). In other words, building a Bloom filter on \(R_{i + 1}\) and
+<i>pushing it down</i> into \((R_{i - 1} \Join R_i)\) can skip outputting non-passing rows.
+</p>
+
+<p>
+Observe that if \(R_{i - 2} \Join R_{i - 1}\) shares a key column with \(R_{i + 1}\), the
+Bloom filter can be pushed into \(R_{i - 2}\). Pushdown can continue until the Bloom filter
+does not apply to the output columns of a join. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #3BD9FF;">Dataset</span> <span style="color: #C440C3;">InnerHashJoinChain</span>(<span style="color: #457EFF;">std</span>::<span style="color: #3BD9FF;">vector</span>&lt;<span style="color: #3BD9FF;">Dataset</span>&gt; <span style="color: #FCE8CE;">build_side</span>, <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">probe_side</span>)
+{
+    <span style="color: #457EFF;">std</span>::<span style="color: #3BD9FF;">vector</span>&lt;HashTable&gt; <span style="color: #FCE8CE;">tables</span>;
+    <span style="color: #457EFF;">std</span>::<span style="color: #3BD9FF;">vector</span>&lt;<span style="color: #457EFF;">std</span>::<span style="color: #3BD9FF;">vector</span>&lt;BloomFilter&gt;&gt; <span style="color: #FCE8CE;">filters</span>(build_side.size());
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">i</span> = 0; i &lt; build_side.size(); i++)
+    {
+        <span style="color: #337373;">// </span><span style="color: #337373;">Step 1: Construct Bloom filter and hash tables</span>
+        <span style="color: #3BD9FF;">HashTable</span> <span style="color: #FCE8CE;">table</span>;
+        <span style="color: #3BD9FF;">BloomFilter</span> <span style="color: #FCE8CE;">filter</span>;
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : ds)
+        {
+            filter.Insert(row);
+            table.Insert(row);
+        }
+        tables.push_back(table);
+
+        <span style="color: #337373;">// </span><span style="color: #337373;">Step 2: Push Bloom filter to the earliest Join it makes sense for</span>
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">j</span> = 0; j &lt; i; j++)
+        {
+            <span style="color: #8CFFAF;">if</span>(HasMatchingKeys(build_side[j], build_side[i]))
+            {
+                filters[j].push_back(filter);
+                <span style="color: #8CFFAF;">break</span>;
+            }
+        }
+    }
+
+    <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">result</span> = probe_side;
+    <span style="color: #8CFFAF;">for</span>(<span style="color: #3BD9FF;">int</span> <span style="color: #FCE8CE;">i</span> = 0; i &lt; tables.size(); i++)
+    {
+        <span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">HashTable</span> &amp;<span style="color: #FCE8CE;">table</span> = tables[i];
+        <span style="color: #8CFFAF;">const</span> <span style="color: #457EFF;">std</span>::<span style="color: #3BD9FF;">vector</span>&lt;<span style="color: #3BD9FF;">BloomFilter</span>&gt; &amp;<span style="color: #FCE8CE;">bfs</span> = filters[i];
+        <span style="color: #3BD9FF;">Dataset</span> <span style="color: #FCE8CE;">next</span>;
+        <span style="color: #337373;">// </span><span style="color: #337373;">Step 3: Probe candidate rows</span>
+        <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">row</span> : result)
+            <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">Row</span> &amp;<span style="color: #FCE8CE;">match</span> : table.Probe(row))
+            {
+                <span style="color: #3BD9FF;">bool</span> <span style="color: #FCE8CE;">passed_filter</span> = <span style="color: #457EFF;">true</span>;
+                <span style="color: #3BD9FF;">Row</span> <span style="color: #FCE8CE;">output_row</span> = match + row;
+                <span style="color: #337373;">// </span><span style="color: #337373;">If the candidate row doesn't pass any of the Bloom filters, skip it</span>
+                <span style="color: #8CFFAF;">for</span>(<span style="color: #8CFFAF;">const</span> <span style="color: #3BD9FF;">BloomFilter</span> &amp;<span style="color: #FCE8CE;">bf</span> : bfs)
+                {
+                    <span style="color: #8CFFAF;">if</span>(!bf.Query(output_row))
+                    {
+                        passed_filter = <span style="color: #457EFF;">false</span>;
+                        <span style="color: #8CFFAF;">break</span>;
+                    }
+                }
+                <span style="color: #8CFFAF;">if</span>(passed_filter)
+                    next.insert(output_row);
+            }
+        result = next;
+    }
+    <span style="color: #8CFFAF;">return</span> result;
+}
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Sasha</p>
+<p class="date">Created: 2022-01-04 Tue 13:56</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
