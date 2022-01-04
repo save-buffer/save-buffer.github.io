@@ -1,8 +1,0 @@
-[submodule "themes/terminal"]
-	path = themes/terminal
-	url = https://github.com/panr/hugo-theme-terminal.git
-	branch = master
-[submodule "public"]
-	path = public
-	url = git@github.com:save-buffer/save-buffer.github.io.git
-	branch = master
