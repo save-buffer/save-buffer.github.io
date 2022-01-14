@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-01-13 Thu 15:57 -->
+<!-- 2022-01-13 Thu 16:21 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>All About Bloom Filters for Hash Joins</title>
@@ -223,43 +223,43 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org73f61a7">1. Introduction</a>
+<li><a href="#orgd356536">1. Introduction</a>
 <ul>
-<li><a href="#org5237b97">1.1. Formal Definition</a>
+<li><a href="#org0033b21">1.1. Formal Definition</a>
 <ul>
-<li><a href="#orgf321579">1.1.1. Algorithm Description</a></li>
-<li><a href="#org1cd3ae9">1.1.2. Choosing \(m\) and \(k\)</a></li>
+<li><a href="#org34eca45">1.1.1. Algorithm Description</a></li>
+<li><a href="#org46fcc7b">1.1.2. Choosing \(m\) and \(k\)</a></li>
 </ul>
 </li>
-<li><a href="#org0b9a6da">1.2. Practical Implementation</a>
+<li><a href="#org07e91cd">1.2. Practical Implementation</a>
 <ul>
-<li><a href="#org623a3d3">1.2.1. Blocked Bloom Filters</a></li>
-<li><a href="#org3b5d822">1.2.2. Bit Patterns</a></li>
-<li><a href="#org569269f">1.2.3. Register Blocking</a></li>
-<li><a href="#org4cecc63">1.2.4. Regaining Randomness</a></li>
+<li><a href="#org3a04495">1.2.1. Blocked Bloom Filters</a></li>
+<li><a href="#org14e945a">1.2.2. Bit Patterns</a></li>
+<li><a href="#org2845754">1.2.3. Register Blocking</a></li>
+<li><a href="#org311df97">1.2.4. Regaining Randomness</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#orga2aa42c">2. Binary Hash Join</a>
+<li><a href="#org444b1ee">2. Binary Hash Join</a>
 <ul>
-<li><a href="#org2764f31">2.1. Build-side Bloom filter</a></li>
-<li><a href="#org882fadc">2.2. Probe-side Bloom filter</a></li>
-<li><a href="#org8675c80">2.3. Fuzzy Hash Join</a></li>
+<li><a href="#orge40301c">2.1. Build-side Bloom filter</a></li>
+<li><a href="#org805a3be">2.2. Probe-side Bloom filter</a></li>
+<li><a href="#orge3124a3">2.3. Fuzzy Hash Join</a></li>
 </ul>
 </li>
-<li><a href="#orgea3bbe6">3. Chain of Binary Hash Joins</a>
+<li><a href="#org4ade51c">3. Chain of Binary Hash Joins</a>
 <ul>
-<li><a href="#orgfca3bc9">3.1. Bloom Filter Pushdown</a></li>
+<li><a href="#org500b9ac">3.1. Bloom Filter Pushdown</a></li>
 </ul>
 </li>
-<li><a href="#org0e23c9b">4. References</a></li>
+<li><a href="#orgca9bf5b">4. References</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org73f61a7" class="outline-2">
-<h2 id="org73f61a7"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-orgd356536" class="outline-2">
+<h2 id="orgd356536"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 A Bloom filter is a probabilistic data structure which provides an efficient way to query whether an element is a member
@@ -270,8 +270,8 @@ build phase and a probe phase. That is, they cannot grow dynamically, and once p
 </p>
 </div>
 
-<div id="outline-container-org5237b97" class="outline-3">
-<h3 id="org5237b97"><span class="section-number-3">1.1.</span> Formal Definition</h3>
+<div id="outline-container-org0033b21" class="outline-3">
+<h3 id="org0033b21"><span class="section-number-3">1.1.</span> Formal Definition</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 Bloom filters are parameterized by \(n, \epsilon\), where \(n\) is the number of elements to be inserted and
@@ -289,8 +289,8 @@ probability \(1 - \epsilon\) or <code>true</code> with probability \(\epsilon\) 
 </ul>
 </div>
 
-<div id="outline-container-orgf321579" class="outline-4">
-<h4 id="orgf321579"><span class="section-number-4">1.1.1.</span> Algorithm Description</h4>
+<div id="outline-container-org34eca45" class="outline-4">
+<h4 id="org34eca45"><span class="section-number-4">1.1.1.</span> Algorithm Description</h4>
 <div class="outline-text-4" id="text-1-1-1">
 <p>
 An \((n, \epsilon)-\) Bloom filter \(B\) is an array of \(m\) bits and \(k\) hash functions, where \(m\) and \(k\) are picked in some
@@ -363,8 +363,8 @@ Similarly, to <code>query</code> we just check if all of the corresponding bits 
 </div>
 </div>
 
-<div id="outline-container-org1cd3ae9" class="outline-4">
-<h4 id="org1cd3ae9"><span class="section-number-4">1.1.2.</span> Choosing \(m\) and \(k\)</h4>
+<div id="outline-container-org46fcc7b" class="outline-4">
+<h4 id="org46fcc7b"><span class="section-number-4">1.1.2.</span> Choosing \(m\) and \(k\)</h4>
 <div class="outline-text-4" id="text-1-1-2">
 <p>
 For a given \(n, \epsilon\), we'd like to pick \(m, k\) such that \(m\) and \(k\) are minimized while respecting the bound on
@@ -402,8 +402,8 @@ Simply translating these bounds completes the bloom filter:
 </div>
 </div>
 
-<div id="outline-container-org0b9a6da" class="outline-3">
-<h3 id="org0b9a6da"><span class="section-number-3">1.2.</span> Practical Implementation</h3>
+<div id="outline-container-org07e91cd" class="outline-3">
+<h3 id="org07e91cd"><span class="section-number-3">1.2.</span> Practical Implementation</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 While conceptually elegant, the standard Bloom filter is extremely inefficient. Even setting aside the inefficiency of evaluating
@@ -413,8 +413,8 @@ lookups, the expected number of misses is thus \(2\), and a positive lookup will
 </p>
 </div>
 
-<div id="outline-container-org623a3d3" class="outline-4">
-<h4 id="org623a3d3"><span class="section-number-4">1.2.1.</span> Blocked Bloom Filters</h4>
+<div id="outline-container-org3a04495" class="outline-4">
+<h4 id="org3a04495"><span class="section-number-4">1.2.1.</span> Blocked Bloom Filters</h4>
 <div class="outline-text-4" id="text-1-2-1">
 <p>
 The classic way to deal with cache misses is increasing locality, and Bloom filters are no different. We cannot hope to have
@@ -473,8 +473,8 @@ needed to compensate.
 </div>
 </div>
 
-<div id="outline-container-org3b5d822" class="outline-4">
-<h4 id="org3b5d822"><span class="section-number-4">1.2.2.</span> Bit Patterns</h4>
+<div id="outline-container-org14e945a" class="outline-4">
+<h4 id="org14e945a"><span class="section-number-4">1.2.2.</span> Bit Patterns</h4>
 <div class="outline-text-4" id="text-1-2-2">
 <p>
 Cache misses aside, the other major overhead of the classic Bloom filter is the evaluation of several hash functions. Hash
@@ -537,8 +537,8 @@ to the same pattern.
 </div>
 </div>
 
-<div id="outline-container-org569269f" class="outline-4">
-<h4 id="org569269f"><span class="section-number-4">1.2.3.</span> Register Blocking</h4>
+<div id="outline-container-org2845754" class="outline-4">
+<h4 id="org2845754"><span class="section-number-4">1.2.3.</span> Register Blocking</h4>
 <div class="outline-text-4" id="text-1-2-3">
 <p>
 A Register-Blocked Bloom filter (2) sacrifices even more precision in favor of processing efficiency
@@ -583,8 +583,8 @@ parallel queries into the filter using SIMD, since a single SIMD register would 
 </div>
 </div>
 
-<div id="outline-container-org4cecc63" class="outline-4">
-<h4 id="org4cecc63"><span class="section-number-4">1.2.4.</span> Regaining Randomness</h4>
+<div id="outline-container-org311df97" class="outline-4">
+<h4 id="org311df97"><span class="section-number-4">1.2.4.</span> Regaining Randomness</h4>
 <div class="outline-text-4" id="text-1-2-4">
 <p>
 This section shows some cheap ways of increasing the precision of the Bloom filter without sacrificing performance. The most
@@ -641,8 +641,8 @@ a rotation of the bit pattern. The remaining bits can then be used for the block
 </div>
 </div>
 
-<div id="outline-container-orga2aa42c" class="outline-2">
-<h2 id="orga2aa42c"><span class="section-number-2">2.</span> Binary Hash Join</h2>
+<div id="outline-container-org444b1ee" class="outline-2">
+<h2 id="org444b1ee"><span class="section-number-2">2.</span> Binary Hash Join</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Hash Join is an algorithm for evaluating equijoins, where at least one of the join conditions is an equality between "key columns".
@@ -734,8 +734,8 @@ we define them as follows:
 </ul>
 </div>
 
-<div id="outline-container-org2764f31" class="outline-3">
-<h3 id="org2764f31"><span class="section-number-3">2.1.</span> Build-side Bloom filter</h3>
+<div id="outline-container-orge40301c" class="outline-3">
+<h3 id="orge40301c"><span class="section-number-3">2.1.</span> Build-side Bloom filter</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Build-side Bloom filter allows skipping hash table lookups during the probe phase. Thus we can expect the number of hash table
@@ -776,8 +776,8 @@ When actually performing a hash join, a build-side Bloom filter allow for two mo
 </div>
 </div>
 
-<div id="outline-container-org882fadc" class="outline-3">
-<h3 id="org882fadc"><span class="section-number-3">2.2.</span> Probe-side Bloom filter</h3>
+<div id="outline-container-org805a3be" class="outline-3">
+<h3 id="org805a3be"><span class="section-number-3">2.2.</span> Probe-side Bloom filter</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Probe-side Bloom filter allows you to make the hash table much smaller at the cost of having to perform an extra scan. Hash
@@ -822,8 +822,8 @@ As before, a probe-side Bloom filter can help with either early-outputting or ea
 </div>
 </div>
 
-<div id="outline-container-org8675c80" class="outline-3">
-<h3 id="org8675c80"><span class="section-number-3">2.3.</span> Fuzzy Hash Join</h3>
+<div id="outline-container-orge3124a3" class="outline-3">
+<h3 id="orge3124a3"><span class="section-number-3">2.3.</span> Fuzzy Hash Join</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 The idea of a Fuzzy Hash Join is analogous to layering a Bloom filter over a build or probe: we perform a Hash Join
@@ -890,8 +890,8 @@ the intersection of the build and probe side is very small compared to both the 
 </div>
 </div>
 
-<div id="outline-container-orgea3bbe6" class="outline-2">
-<h2 id="orgea3bbe6"><span class="section-number-2">3.</span> Chain of Binary Hash Joins</h2>
+<div id="outline-container-org4ade51c" class="outline-2">
+<h2 id="org4ade51c"><span class="section-number-2">3.</span> Chain of Binary Hash Joins</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 We will now explore applications of Bloom filters for a chain of binary joins, of the form
@@ -939,8 +939,8 @@ we would skip needlessly materializing multiplicatively many rows.</li>
 </ul>
 </div>
 
-<div id="outline-container-orgfca3bc9" class="outline-3">
-<h3 id="orgfca3bc9"><span class="section-number-3">3.1.</span> Bloom Filter Pushdown</h3>
+<div id="outline-container-org500b9ac" class="outline-3">
+<h3 id="org500b9ac"><span class="section-number-3">3.1.</span> Bloom Filter Pushdown</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 Notice that for join \(\Join_i\), its join key columns must become available somewhere inside of the prefix chain
@@ -953,6 +953,23 @@ This idea is called <i>pushdown</i>: each join \(\Join_i\) constructs its hash t
 \(F_i\)). It then pushes this Bloom filter down the chain to the first join \(\Join_j\) whose probe side input contains all of
 the key columns of \(R_i\). Then prior to probing the hash table on \(R_j\), \(\Join_j\) runs its probe side input through \(F_i\)
 and performs the join as normal.
+</p>
+
+<p>
+Because a Bloom filter \(F_i\) will only be able to test with certainty whether a row is <i>absent</i> from \(R_i\), extra care must
+be taken to ensure that early elimination of rows will produce correct results in the context of all of the join types. Recall
+that build-side Bloom filters allow for early elimination of rows for:
+</p>
+<ul class="org-ul">
+<li>Inner Join</li>
+<li>Left Semijoin</li>
+<li>Right Semijoin</li>
+<li>Right Antijoin</li>
+<li>Right Outer Join</li>
+</ul>
+<p>
+These are the exact types of join for which it's valid to push down a Bloom filter. The other three joins benefit from early output,
+and therefore must go through the pipeline to be output by \(\Join_i\).
 </p>
 
 <div class="org-src-container">
@@ -1009,8 +1026,8 @@ and performs the join as normal.
 </div>
 </div>
 
-<div id="outline-container-org0e23c9b" class="outline-2">
-<h2 id="org0e23c9b"><span class="section-number-2">4.</span> References</h2>
+<div id="outline-container-orgca9bf5b" class="outline-2">
+<h2 id="orgca9bf5b"><span class="section-number-2">4.</span> References</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 [1] Broder, Andrei and Mitzenmacher, Michael, <i>Survey: Network Applications of Bloom Filters: A Survey.</i>, Internet Mathematics, 2003.</p>
@@ -1025,7 +1042,7 @@ and performs the join as normal.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Sasha</p>
-<p class="date">Created: 2022-01-13 Thu 15:57</p>
+<p class="date">Created: 2022-01-13 Thu 16:21</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
