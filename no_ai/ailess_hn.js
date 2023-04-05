@@ -9,7 +9,7 @@ fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
         })
     .then(posts =>
         {
-            return posts.filter(post => !(/.*(LLM|GPT|AI|LLaMa).*/.test(post.title))).slice(0, 30);
+            return posts.filter(post => !(/.*(LLM|GPT|AI|LLaMA).*/.test(post.title))).slice(0, 30);
         }
     )
     .then(posts =>
