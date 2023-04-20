@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-01-13 Thu 16:21 -->
+<!-- 2023-04-19 Wed 14:36 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>All About Bloom Filters for Hash Joins</title>
@@ -191,31 +191,8 @@
     { font-size: 10px; font-weight: bold; white-space: nowrap; }
   .org-info-js_search-highlight
     { background-color: #ffff00; color: #000000; font-weight: bold; }
-  .org-svg { width: 90%; }
+  .org-svg { }
 </style>
-<!--<link rel="stylesheet" type="text/css" href="css/stylesheet.css"/>-->
-<script type="text/javascript">
-// @license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt Public Domain
-<!--/*--><![CDATA[/*><!--*/
-     function CodeHighlightOn(elem, id)
-     {
-       var target = document.getElementById(id);
-       if(null != target) {
-         elem.classList.add("code-highlighted");
-         target.classList.add("code-highlighted");
-       }
-     }
-     function CodeHighlightOff(elem, id)
-     {
-       var target = document.getElementById(id);
-       if(null != target) {
-         elem.classList.remove("code-highlighted");
-         target.classList.remove("code-highlighted");
-       }
-     }
-    /*]]>*///-->
-// @license-end
-</script>
 <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
         displayAlign: "center",
@@ -245,43 +222,43 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgd356536">1. Introduction</a>
+<li><a href="#orgfffd47a">1. Introduction</a>
 <ul>
-<li><a href="#org0033b21">1.1. Formal Definition</a>
+<li><a href="#org3b2e6ff">1.1. Formal Definition</a>
 <ul>
-<li><a href="#org34eca45">1.1.1. Algorithm Description</a></li>
-<li><a href="#org46fcc7b">1.1.2. Choosing \(m\) and \(k\)</a></li>
+<li><a href="#orgd18d512">1.1.1. Algorithm Description</a></li>
+<li><a href="#org96f5b5d">1.1.2. Choosing \(m\) and \(k\)</a></li>
 </ul>
 </li>
-<li><a href="#org07e91cd">1.2. Practical Implementation</a>
+<li><a href="#orga5ddc97">1.2. Practical Implementation</a>
 <ul>
-<li><a href="#org3a04495">1.2.1. Blocked Bloom Filters</a></li>
-<li><a href="#org14e945a">1.2.2. Bit Patterns</a></li>
-<li><a href="#org2845754">1.2.3. Register Blocking</a></li>
-<li><a href="#org311df97">1.2.4. Regaining Randomness</a></li>
+<li><a href="#orgdccf4ce">1.2.1. Blocked Bloom Filters</a></li>
+<li><a href="#org0002c40">1.2.2. Bit Patterns</a></li>
+<li><a href="#org6db0bb0">1.2.3. Register Blocking</a></li>
+<li><a href="#orgd25ea72">1.2.4. Regaining Randomness</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org444b1ee">2. Binary Hash Join</a>
+<li><a href="#org54db319">2. Binary Hash Join</a>
 <ul>
-<li><a href="#orge40301c">2.1. Build-side Bloom filter</a></li>
-<li><a href="#org805a3be">2.2. Probe-side Bloom filter</a></li>
-<li><a href="#orge3124a3">2.3. Fuzzy Hash Join</a></li>
+<li><a href="#org1726a91">2.1. Build-side Bloom filter</a></li>
+<li><a href="#org488568b">2.2. Probe-side Bloom filter</a></li>
+<li><a href="#org16bb286">2.3. Fuzzy Hash Join</a></li>
 </ul>
 </li>
-<li><a href="#org4ade51c">3. Chain of Binary Hash Joins</a>
+<li><a href="#org7a3b89c">3. Chain of Binary Hash Joins</a>
 <ul>
-<li><a href="#org500b9ac">3.1. Bloom Filter Pushdown</a></li>
+<li><a href="#org301db2c">3.1. Bloom Filter Pushdown</a></li>
 </ul>
 </li>
-<li><a href="#orgca9bf5b">4. References</a></li>
+<li><a href="#org1d9bb74">4. References</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orgd356536" class="outline-2">
-<h2 id="orgd356536"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-orgfffd47a" class="outline-2">
+<h2 id="orgfffd47a"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 A Bloom filter is a probabilistic data structure which provides an efficient way to query whether an element is a member
@@ -292,8 +269,8 @@ build phase and a probe phase. That is, they cannot grow dynamically, and once p
 </p>
 </div>
 
-<div id="outline-container-org0033b21" class="outline-3">
-<h3 id="org0033b21"><span class="section-number-3">1.1.</span> Formal Definition</h3>
+<div id="outline-container-org3b2e6ff" class="outline-3">
+<h3 id="org3b2e6ff"><span class="section-number-3">1.1.</span> Formal Definition</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 Bloom filters are parameterized by \(n, \epsilon\), where \(n\) is the number of elements to be inserted and
@@ -311,36 +288,36 @@ probability \(1 - \epsilon\) or <code>true</code> with probability \(\epsilon\) 
 </ul>
 </div>
 
-<div id="outline-container-org34eca45" class="outline-4">
-<h4 id="org34eca45"><span class="section-number-4">1.1.1.</span> Algorithm Description</h4>
+<div id="outline-container-orgd18d512" class="outline-4">
+<h4 id="orgd18d512"><span class="section-number-4">1.1.1.</span> Algorithm Description</h4>
 <div class="outline-text-4" id="text-1-1-1">
 <p>
 An \((n, \epsilon)-\) Bloom filter \(B\) is an array of \(m\) bits and \(k\) hash functions, where \(m\) and \(k\) are picked in some
 combination to guarantee the false positive rate is at most \(\epsilon\) when the number of inserted elements is at most \(n\).
 </p>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">uint64_t</span> <span style="color: #fcfcfc;">ComputeHash</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>, <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">hash_idx</span>);
+<pre class="src src-cpp"><span style="color: #8f0075;">uint64_t</span> <span style="color: #721045;">ComputeHash</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>, <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">hash_idx</span>);
 
-<span style="color: #FF16B0;">struct</span> <span style="color: #46BDFF;">BloomFilter</span>
+<span style="color: #531ab6;">struct</span> <span style="color: #005f5f;">BloomFilter</span>
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #fcfcfc;">ComputeNumBits</span>();
-    <span style="color: #46BDFF;">int</span> <span style="color: #fcfcfc;">ComputeNumHashFns</span>();
+    <span style="color: #8f0075;">int</span> <span style="color: #721045;">ComputeNumBits</span>();
+    <span style="color: #8f0075;">int</span> <span style="color: #721045;">ComputeNumHashFns</span>();
 
-    <span style="color: #fcfcfc;">BloomFilter</span>(<span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">n</span>, <span style="color: #46BDFF;">float</span> <span style="color: #eedd82;">eps</span>) : n(n), epsilon(eps)
+    <span style="color: #721045;">BloomFilter</span>(<span style="color: #8f0075;">int</span> <span style="color: #005e8b;">n</span>, <span style="color: #8f0075;">float</span> <span style="color: #005e8b;">eps</span>) : n(n), epsilon(eps)
     {
-        <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">m</span> = ComputeNumBits();
-        bv = <span style="color: #FF16B0;">new</span> <span style="color: #46BDFF;">uint8_t</span>[(m + 7) / 8];
+        <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">m</span> = <span style="color: #721045;">ComputeNumBits</span>();
+        <span style="color: #005e8b;">bv</span> = <span style="color: #531ab6;">new</span> <span style="color: #005f5f;">uint8_t</span>[(m + <span style="color: #0000b0;">7</span>) / <span style="color: #0000b0;">8</span>];
     }
 
-    ~<span style="color: #fcfcfc;">BloomFilter</span>() { <span style="color: #FF16B0;">delete</span>[] bv }
+    ~BloomFilter() { <span style="color: #531ab6;">delete</span>[] bv }
 
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">n</span>;
-    <span style="color: #46BDFF;">float</span> <span style="color: #eedd82;">epsilon</span>;
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">n</span>;
+    <span style="color: #8f0075;">float</span> <span style="color: #005e8b;">epsilon</span>;
 
-    <span style="color: #46BDFF;">void</span> <span style="color: #fcfcfc;">Insert</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>);
-    <span style="color: #46BDFF;">bool</span> <span style="color: #fcfcfc;">Query</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>);
+    <span style="color: #8f0075;">void</span> <span style="color: #721045;">Insert</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>);
+    <span style="color: #8f0075;">bool</span> <span style="color: #721045;">Query</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>);
 
-    <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">bv</span>;
+    <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">bv</span>;
 };
 </pre>
 </div>
@@ -349,15 +326,15 @@ combination to guarantee the false positive rate is at most \(\epsilon\) when th
 To <code>insert</code>, we simply evaluate all \(k\) hash functions on the inserted element and set the corresponding bit in the bit vector.
 </p>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">void</span> <span style="color: #96A1FF;">BloomFilter</span>::<span style="color: #fcfcfc;">Insert</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<pre class="src src-cpp"><span style="color: #8f0075;">void</span> <span style="color: #005f5f;">BloomFilter</span>::<span style="color: #721045;">Insert</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">k</span> = ComputeNumHashFns();
-    <span style="color: #FF16B0;">for</span>(<span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">i</span> = 0; i &lt; k; i++)
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">k</span> = <span style="color: #721045;">ComputeNumHashFns</span>();
+    <span style="color: #531ab6;">for</span>(<span style="color: #8f0075;">int</span> <span style="color: #005e8b;">i</span> = <span style="color: #0000b0;">0</span>; i &lt; k; <span style="color: #005e8b;">i</span>++)
     {
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row, i) % m;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">bit_idx</span> = hash % 8;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">byte_idx</span> = hash / 8;
-        bv[byte_idx] |= (1 &lt;&lt; bit_idx);
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row, i) % m;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">bit_idx</span> = hash % <span style="color: #0000b0;">8</span>;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">byte_idx</span> = hash / <span style="color: #0000b0;">8</span>;
+        <span style="color: #005e8b;">bv</span>[byte_idx] |= (<span style="color: #0000b0;">1</span> &lt;&lt; bit_idx);
     }
 }
 </pre>
@@ -367,32 +344,32 @@ To <code>insert</code>, we simply evaluate all \(k\) hash functions on the inser
 Similarly, to <code>query</code> we just check if all of the corresponding bits are set in the bit vector.
 </p>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">bool</span> <span style="color: #96A1FF;">BloomFilter</span>::<span style="color: #fcfcfc;">Query</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<pre class="src src-cpp"><span style="color: #8f0075;">bool</span> <span style="color: #005f5f;">BloomFilter</span>::<span style="color: #721045;">Query</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">k</span> = ComputeNumHashFns();
-    <span style="color: #46BDFF;">bool</span> <span style="color: #eedd82;">result</span> = <span style="color: #96A1FF;">true</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">i</span> = 0; i &lt; k; i++)
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">k</span> = <span style="color: #721045;">ComputeNumHashFns</span>();
+    <span style="color: #8f0075;">bool</span> <span style="color: #005e8b;">result</span> = <span style="color: #0000b0;">true</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #8f0075;">int</span> <span style="color: #005e8b;">i</span> = <span style="color: #0000b0;">0</span>; i &lt; k; <span style="color: #005e8b;">i</span>++)
     {
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row, i) % m;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">bit_idx</span> = hash % 8;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">byte_idx</span> = hash / 8;
-        result &amp;= (bv[byte_idx] &gt;&gt; bit_idx) &amp; 1;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row, i) % m;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">bit_idx</span> = hash % <span style="color: #0000b0;">8</span>;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">byte_idx</span> = hash / <span style="color: #0000b0;">8</span>;
+        <span style="color: #005e8b;">result</span> &amp;= (bv[byte_idx] &gt;&gt; bit_idx) &amp; <span style="color: #0000b0;">1</span>;
     }
-    <span style="color: #FF16B0;">return</span> result;
+    <span style="color: #531ab6;">return</span> result;
 }
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org46fcc7b" class="outline-4">
-<h4 id="org46fcc7b"><span class="section-number-4">1.1.2.</span> Choosing \(m\) and \(k\)</h4>
+<div id="outline-container-org96f5b5d" class="outline-4">
+<h4 id="org96f5b5d"><span class="section-number-4">1.1.2.</span> Choosing \(m\) and \(k\)</h4>
 <div class="outline-text-4" id="text-1-1-2">
 <p>
 For a given \(n, \epsilon\), we'd like to pick \(m, k\) such that \(m\) and \(k\) are minimized while respecting the bound on
 false positive rate. We can parameterize the relationship between \(\epsilon\) and \(m\) using a <i>bits-per-element</i> metric,
 \(c = \frac{m}{n}\). It has been shown that for a given \(\epsilon\), the minimum bits per element is \(c = -1.44\log_2{\epsilon}\),
-with the corresponding number of hash functions being \(k = -\log_2{\epsilon}\) (1). Interestingly, \(k\) is independent
+with the corresponding number of hash functions being \(k = -\log_2{\epsilon}\). Interestingly, \(k\) is independent
 of \(n\).
 </p>
 
@@ -409,14 +386,14 @@ we get that \(\epsilon = 2^{\frac{c}{-1.44}}\). As you can see below, there are 
 Simply translating these bounds completes the bloom filter:
 </p>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">int</span> <span style="color: #96A1FF;">BloomFilter</span>::<span style="color: #fcfcfc;">ComputeNumBits</span>()
+<pre class="src src-cpp"><span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">int</span> <span style="color: #005f5f;">BloomFilter</span>::<span style="color: #721045;">ComputeNumBits</span>()
 {
-    <span style="color: #FF16B0;">return</span> <span style="color: #FF16B0;">static_cast</span>&lt;<span style="color: #46BDFF;">int</span>&gt;(-1.44 * n * <span style="color: #96A1FF;">std</span>::log2(epsilon) + 0.5);
+    <span style="color: #531ab6;">return</span> <span style="color: #721045;">static_cast</span>&lt;<span style="color: #8f0075;">int</span>&gt;(<span style="color: #0000b0;">-1.44</span> * n * <span style="color: #005f5f;">std</span>::<span style="color: #721045;">log2</span>(epsilon) + <span style="color: #0000b0;">0.5</span>);
 }
 
-<span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">int</span> <span style="color: #96A1FF;">BloomFilter</span>::<span style="color: #fcfcfc;">ComputeNumHashFns</span>()
+<span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">int</span> <span style="color: #005f5f;">BloomFilter</span>::<span style="color: #721045;">ComputeNumHashFns</span>()
 {
-    <span style="color: #FF16B0;">return</span> <span style="color: #FF16B0;">static_cast</span>&lt;<span style="color: #46BDFF;">int</span>&gt;(-<span style="color: #96A1FF;">std</span>::log2(epsilon) + 0.5);
+    <span style="color: #531ab6;">return</span> <span style="color: #721045;">static_cast</span>&lt;<span style="color: #8f0075;">int</span>&gt;(-<span style="color: #005f5f;">std</span>::<span style="color: #721045;">log2</span>(epsilon) + <span style="color: #0000b0;">0.5</span>);
 }
 </pre>
 </div>
@@ -424,8 +401,8 @@ Simply translating these bounds completes the bloom filter:
 </div>
 </div>
 
-<div id="outline-container-org07e91cd" class="outline-3">
-<h3 id="org07e91cd"><span class="section-number-3">1.2.</span> Practical Implementation</h3>
+<div id="outline-container-orga5ddc97" class="outline-3">
+<h3 id="orga5ddc97"><span class="section-number-3">1.2.</span> Practical Implementation</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 While conceptually elegant, the standard Bloom filter is extremely inefficient. Even setting aside the inefficiency of evaluating
@@ -435,8 +412,8 @@ lookups, the expected number of misses is thus \(2\), and a positive lookup will
 </p>
 </div>
 
-<div id="outline-container-org3a04495" class="outline-4">
-<h4 id="org3a04495"><span class="section-number-4">1.2.1.</span> Blocked Bloom Filters</h4>
+<div id="outline-container-orgdccf4ce" class="outline-4">
+<h4 id="orgdccf4ce"><span class="section-number-4">1.2.1.</span> Blocked Bloom Filters</h4>
 <div class="outline-text-4" id="text-1-2-1">
 <p>
 The classic way to deal with cache misses is increasing locality, and Bloom filters are no different. We cannot hope to have
@@ -457,37 +434,37 @@ needed to compensate.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">uint8_t</span> *<span style="color: #96A1FF;">BlockedBloomFilter</span>::<span style="color: #fcfcfc;">GetBlock</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<pre class="src src-cpp"><span style="color: #8f0075;">uint8_t</span> *<span style="color: #005f5f;">BlockedBloomFilter</span>::<span style="color: #721045;">GetBlock</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">num_blocks</span> = m / CACHE_LINE_BITS;
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">block_idx</span> = ComputeHash(row, 0) % num_blocks;
-    <span style="color: #FF16B0;">return</span> bv + block_idx;
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">num_blocks</span> = m / <span style="color: #0000b0;">CACHE_LINE_BITS</span>;
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">block_idx</span> = <span style="color: #721045;">ComputeHash</span>(row, <span style="color: #0000b0;">0</span>) % num_blocks;
+    <span style="color: #531ab6;">return</span> bv + block_idx;
 }
 
-<span style="color: #46BDFF;">void</span> <span style="color: #96A1FF;">BlockedBloomFilter</span>::<span style="color: #fcfcfc;">Insert</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">void</span> <span style="color: #005f5f;">BlockedBloomFilter</span>::<span style="color: #721045;">Insert</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">k</span> = ComputeNumHashFns();
-    <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    <span style="color: #FF16B0;">for</span>(<span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">i</span> = 1; i &lt; k; i++)
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">k</span> = <span style="color: #721045;">ComputeNumHashFns</span>();
+    <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    <span style="color: #531ab6;">for</span>(<span style="color: #8f0075;">int</span> <span style="color: #005e8b;">i</span> = <span style="color: #0000b0;">1</span>; i &lt; k; <span style="color: #005e8b;">i</span>++)
     {
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row, i) % CACHE_LINE_BITS;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">bit_idx</span> = hash % 8;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">byte_idx</span> = hash / 8;
-        block[byte_idx] |= (1 &lt;&lt; bit_idx);
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row, i) % <span style="color: #0000b0;">CACHE_LINE_BITS</span>;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">bit_idx</span> = hash % <span style="color: #0000b0;">8</span>;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">byte_idx</span> = hash / <span style="color: #0000b0;">8</span>;
+        <span style="color: #005e8b;">block</span>[byte_idx] |= (<span style="color: #0000b0;">1</span> &lt;&lt; bit_idx);
     }
 }
 
-<span style="color: #46BDFF;">bool</span> <span style="color: #96A1FF;">BlockedBloomFilter</span>::<span style="color: #fcfcfc;">Query</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">bool</span> <span style="color: #005f5f;">BlockedBloomFilter</span>::<span style="color: #721045;">Query</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">k</span> = ComputeNumHashFns();
-    <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    <span style="color: #46BDFF;">bool</span> <span style="color: #eedd82;">result</span> = <span style="color: #96A1FF;">true</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">i</span> = 1; i &lt; k; i++)
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">k</span> = <span style="color: #721045;">ComputeNumHashFns</span>();
+    <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    <span style="color: #8f0075;">bool</span> <span style="color: #005e8b;">result</span> = <span style="color: #0000b0;">true</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #8f0075;">int</span> <span style="color: #005e8b;">i</span> = <span style="color: #0000b0;">1</span>; i &lt; k; <span style="color: #005e8b;">i</span>++)
     {
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row, i) % CACHE_LINE_BITS;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">bit_idx</span> = hash % 8;
-        <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">byte_idx</span> = hash / 8;
-        result &amp;= (1 &lt;&lt; bit_idx);
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row, i) % <span style="color: #0000b0;">CACHE_LINE_BITS</span>;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">bit_idx</span> = hash % <span style="color: #0000b0;">8</span>;
+        <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">byte_idx</span> = hash / <span style="color: #0000b0;">8</span>;
+        <span style="color: #005e8b;">result</span> &amp;= (<span style="color: #0000b0;">1</span> &lt;&lt; bit_idx);
     }
 }
 </pre>
@@ -495,8 +472,8 @@ needed to compensate.
 </div>
 </div>
 
-<div id="outline-container-org14e945a" class="outline-4">
-<h4 id="org14e945a"><span class="section-number-4">1.2.2.</span> Bit Patterns</h4>
+<div id="outline-container-org0002c40" class="outline-4">
+<h4 id="org0002c40"><span class="section-number-4">1.2.2.</span> Bit Patterns</h4>
 <div class="outline-text-4" id="text-1-2-2">
 <p>
 Cache misses aside, the other major overhead of the classic Bloom filter is the evaluation of several hash functions. Hash
@@ -512,101 +489,101 @@ to the same pattern.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #FF16B0;">static</span> <span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">PATTERNS</span>; <span style="color: #525863;">// </span><span style="color: #525863;">Computed in some clever fashion</span>
-<span style="color: #FF16B0;">static</span> <span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">NUM_PATTERNS</span>;
+<pre class="src src-cpp"><span style="color: #531ab6;">static</span> <span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">PATTERNS</span>; <span style="color: #595959;">// Computed in some clever fashion</span>
+<span style="color: #531ab6;">static</span> <span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">NUM_PATTERNS</span>;
 
-<span style="color: #46BDFF;">uint8_t</span> *<span style="color: #fcfcfc;">GetPattern</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">uint8_t</span> *<span style="color: #721045;">GetPattern</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row); <span style="color: #525863;">// </span><span style="color: #525863;">We only have one hash function</span>
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">pattern_idx</span> = hash % NUM_PATTERNS;
-    <span style="color: #FF16B0;">return</span> PATTERNS + pattern_idx * CACHE_LINE_BYTES;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row); <span style="color: #595959;">// We only have one hash function</span>
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">pattern_idx</span> = hash % <span style="color: #0000b0;">NUM_PATTERNS</span>;
+    <span style="color: #531ab6;">return</span> <span style="color: #0000b0;">PATTERNS</span> + pattern_idx * <span style="color: #0000b0;">CACHE_LINE_BYTES</span>;
 }
 
-<span style="color: #46BDFF;">void</span> <span style="color: #96A1FF;">PatternedBlockedBloomFilter</span>::<span style="color: #fcfcfc;">Insert</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">void</span> <span style="color: #005f5f;">PatternedBlockedBloomFilter</span>::<span style="color: #721045;">Insert</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">pattern</span> = GetPattern(row);
-    <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">pattern_lo</span> = _mm256_loadu_si256(pattern);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">pattern_hi</span> = _mm256_loadu_si256(pattern + <span style="color: #FF16B0;">sizeof</span>(__m256i));
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">block_lo</span> = _mm256_loadu_si256(block);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">block_hi</span> = _mm256_loadu_si256(block + <span style="color: #FF16B0;">sizeof</span>(__256i));
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">new_block_lo</span> = _mm256_or_si256(pattern_lo, block_lo);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">new_block_hi</span> = _mm256_or_si256(pattern_hi, block_hi);
-    _mm256_storeu_si256(pattern, new_block_lo);
-    _mm256_storeu_si256(pattern + <span style="color: #FF16B0;">sizeof</span>(__256i), new_block_hi);
+    <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">pattern</span> = <span style="color: #721045;">GetPattern</span>(row);
+    <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">pattern_lo</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(pattern);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">pattern_hi</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(pattern + <span style="color: #531ab6;">sizeof</span>(__m256i));
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">block_lo</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(block);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">block_hi</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(block + <span style="color: #531ab6;">sizeof</span>(__256i));
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005f5f;">new_block_lo</span> = <span style="color: #721045;">_mm256_or_si256</span>(pattern_lo, block_lo);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005f5f;">new_block_hi</span> = <span style="color: #721045;">_mm256_or_si256</span>(pattern_hi, block_hi);
+    <span style="color: #721045;">_mm256_storeu_si256</span>(pattern, <span style="color: #005f5f;">new_block_lo</span>);
+    <span style="color: #721045;">_mm256_storeu_si256</span>(pattern + <span style="color: #531ab6;">sizeof</span>(__256i), <span style="color: #005f5f;">new_block_hi</span>);
 }
 
-<span style="color: #46BDFF;">bool</span> <span style="color: #96A1FF;">PatternedBlockedBloomFilter</span>::<span style="color: #fcfcfc;">Query</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">bool</span> <span style="color: #005f5f;">PatternedBlockedBloomFilter</span>::<span style="color: #721045;">Query</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">pattern</span> = GetPattern(row);
-    <span style="color: #46BDFF;">uint8_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">pattern_lo</span> = _mm256_loadu_si256(pattern);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">pattern_hi</span> = _mm256_loadu_si256(pattern + <span style="color: #FF16B0;">sizeof</span>(__m256i));
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">block_lo</span> = _mm256_loadu_si256(block);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">block_hi</span> = _mm256_loadu_si256(block + <span style="color: #FF16B0;">sizeof</span>(__256i));
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">set_lo</span> = _mm256_and_si256(pattern_lo, block_lo);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">set_hi</span> = _mm256_and_si256(pattern_hi, block_hi);
+    <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">pattern</span> = <span style="color: #721045;">GetPattern</span>(row);
+    <span style="color: #8f0075;">uint8_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">pattern_lo</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(pattern);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">pattern_hi</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(pattern + <span style="color: #531ab6;">sizeof</span>(__m256i));
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">block_lo</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(block);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">block_hi</span> = <span style="color: #721045;">_mm256_loadu_si256</span>(block + <span style="color: #531ab6;">sizeof</span>(__256i));
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">set_lo</span> = <span style="color: #721045;">_mm256_and_si256</span>(pattern_lo, block_lo);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">set_hi</span> = <span style="color: #721045;">_mm256_and_si256</span>(pattern_hi, block_hi);
 
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">zero</span> = _mm256_setzero_si256();
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">cmp_lo</span> = _mm256_cmpeq_epi8(set_lo, zero);
-    <span style="color: #46BDFF;">__m256i</span> <span style="color: #eedd82;">cmp_hi</span> = _mm256_cmpeq_epi8(set_hi, zero);
-    <span style="color: #46BDFF;">bool</span> <span style="color: #eedd82;">nonzero_lo</span> = _mm256_movemask_epi8(cmp_lo) != 0xff;
-    <span style="color: #46BDFF;">bool</span> <span style="color: #eedd82;">nonzero_hi</span> = _mm256_movemask_epi8(cmp_hi) != 0xff;
-    <span style="color: #FF16B0;">return</span> nonzero_lo || nonzero_hi;
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">zero</span> = <span style="color: #721045;">_mm256_setzero_si256</span>();
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">cmp_lo</span> = <span style="color: #721045;">_mm256_cmpeq_epi8</span>(set_lo, zero);
+    <span style="color: #005f5f;">__m256i</span> <span style="color: #005e8b;">cmp_hi</span> = <span style="color: #721045;">_mm256_cmpeq_epi8</span>(set_hi, zero);
+    <span style="color: #8f0075;">bool</span> <span style="color: #005e8b;">nonzero_lo</span> = <span style="color: #721045;">_mm256_movemask_epi8</span>(cmp_lo) != <span style="color: #0000b0;">0xff</span>;
+    <span style="color: #8f0075;">bool</span> <span style="color: #005e8b;">nonzero_hi</span> = <span style="color: #721045;">_mm256_movemask_epi8</span>(cmp_hi) != <span style="color: #0000b0;">0xff</span>;
+    <span style="color: #531ab6;">return</span> nonzero_lo || nonzero_hi;
 }
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org2845754" class="outline-4">
-<h4 id="org2845754"><span class="section-number-4">1.2.3.</span> Register Blocking</h4>
+<div id="outline-container-org6db0bb0" class="outline-4">
+<h4 id="org6db0bb0"><span class="section-number-4">1.2.3.</span> Register Blocking</h4>
 <div class="outline-text-4" id="text-1-2-3">
 <p>
-A Register-Blocked Bloom filter (2) sacrifices even more precision in favor of processing efficiency
+A Register-Blocked Bloom filter (1) sacrifices even more precision in favor of processing efficiency
 by making the blocks machine word-sized (i.e. 32 or 64 bits). This allows lookups to be processed in one comparison instruction,
 which is even more efficient than the SIMD implementation of the patterned blocked Bloom filter. In fact, it allows for multiple
 parallel queries into the filter using SIMD, since a single SIMD register would be able to hold four or eight blocks. 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #FF16B0;">static</span> <span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">NUM_PATTERNS</span>;
-<span style="color: #FF16B0;">static</span> <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">PATTERNS</span>[NUM_PATTERNS]; <span style="color: #525863;">// </span><span style="color: #525863;">Computed in some clever fashion</span>
+<pre class="src src-cpp"><span style="color: #531ab6;">static</span> <span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">NUM_PATTERNS</span>;
+<span style="color: #531ab6;">static</span> <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">PATTERNS</span>[<span style="color: #005e8b;">NUM_PATTERNS</span>]; <span style="color: #595959;">// Computed in some clever fashion</span>
 
-<span style="color: #46BDFF;">uint64_t</span> <span style="color: #fcfcfc;">GetPattern</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">uint64_t</span> <span style="color: #721045;">GetPattern</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row); <span style="color: #525863;">// </span><span style="color: #525863;">We only have one hash function</span>
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">pattern_idx</span> = hash % NUM_PATTERNS;
-    <span style="color: #FF16B0;">return</span> PATTERNS[pattern_idx];
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row); <span style="color: #595959;">// We only have one hash function</span>
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">pattern_idx</span> = hash % <span style="color: #0000b0;">NUM_PATTERNS</span>;
+    <span style="color: #531ab6;">return</span> <span style="color: #0000b0;">PATTERNS</span>[pattern_idx];
 }
 
-<span style="color: #46BDFF;">uint64_t</span> *<span style="color: #96A1FF;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #fcfcfc;">GetBlock</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">uint64_t</span> *<span style="color: #005f5f;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #721045;">GetBlock</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">num_blocks</span> = m / 64;
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">block_idx</span> = ComputeHash(row) % num_blocks;
-    <span style="color: #FF16B0;">return</span> <span style="color: #FF16B0;">reinterpret_cast</span>&lt;<span style="color: #46BDFF;">uint64_t</span> *&gt;(bv) + block_idx;
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">num_blocks</span> = m / <span style="color: #0000b0;">64</span>;
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">block_idx</span> = <span style="color: #721045;">ComputeHash</span>(row) % num_blocks;
+    <span style="color: #531ab6;">return</span> <span style="color: #721045;">reinterpret_cast</span>&lt;<span style="color: #8f0075;">uint64_t</span> *&gt;(bv) + block_idx;
 }
 
-<span style="color: #46BDFF;">void</span> <span style="color: #96A1FF;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #fcfcfc;">Insert</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">void</span> <span style="color: #005f5f;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #721045;">Insert</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">pattern</span> = GetPattern(row);
-    <span style="color: #46BDFF;">uint64_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    *block |= pattern;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">pattern</span> = <span style="color: #721045;">GetPattern</span>(row);
+    <span style="color: #8f0075;">uint64_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    *<span style="color: #005e8b;">block</span> |= pattern;
 }
 
-<span style="color: #46BDFF;">bool</span> <span style="color: #96A1FF;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #fcfcfc;">Query</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">bool</span> <span style="color: #005f5f;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #721045;">Query</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">pattern</span> = GetPattern(row);
-    <span style="color: #46BDFF;">uint64_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    <span style="color: #FF16B0;">return</span> *block &amp; pattern;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">pattern</span> = <span style="color: #721045;">GetPattern</span>(row);
+    <span style="color: #8f0075;">uint64_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    <span style="color: #531ab6;">return</span> *block &amp; pattern;
 }
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org311df97" class="outline-4">
-<h4 id="org311df97"><span class="section-number-4">1.2.4.</span> Regaining Randomness</h4>
+<div id="outline-container-orgd25ea72" class="outline-4">
+<h4 id="orgd25ea72"><span class="section-number-4">1.2.4.</span> Regaining Randomness</h4>
 <div class="outline-text-4" id="text-1-2-4">
 <p>
 This section shows some cheap ways of increasing the precision of the Bloom filter without sacrificing performance. The most
@@ -618,43 +595,43 @@ a rotation of the bit pattern. The remaining bits can then be used for the block
 </p>
 
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #FF16B0;">static</span> <span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">LOG_NUM_PATTERNS</span> = 10;
-<span style="color: #FF16B0;">static</span> <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">PATTERNS</span>[1 &lt;&lt; LOG_NUM_PATTERNS]; <span style="color: #525863;">// </span><span style="color: #525863;">Computed in some clever fashion</span>
+<pre class="src src-cpp"><span style="color: #531ab6;">static</span> <span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">LOG_NUM_PATTERNS</span> = <span style="color: #0000b0;">10</span>;
+<span style="color: #531ab6;">static</span> <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">PATTERNS</span>[<span style="color: #0000b0;">1</span> &lt;&lt; <span style="color: #0000b0;">LOG_NUM_PATTERNS</span>]; <span style="color: #595959;">// Computed in some clever fashion</span>
 
-<span style="color: #FF16B0;">static</span> <span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">ROTATE_BITS</span> = 6; <span style="color: #525863;">// </span><span style="color: #525863;">6 bits for a max rotation of 63</span>
+<span style="color: #531ab6;">static</span> <span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">ROTATE_BITS</span> = <span style="color: #0000b0;">6</span>; <span style="color: #595959;">// 6 bits for a max rotation of 63</span>
 
-<span style="color: #FF16B0;">static</span> <span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">PATTERN_MASK</span> = (1 &lt;&lt; LOG_NUM_PATTERNS) - 1;
-<span style="color: #FF16B0;">static</span> <span style="color: #FF16B0;">constexpr</span> <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">ROTATE_MASK</span> = (1 &lt;&lt; 6) - 1;
+<span style="color: #531ab6;">static</span> <span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">PATTERN_MASK</span> = (<span style="color: #0000b0;">1</span> &lt;&lt; <span style="color: #0000b0;">LOG_NUM_PATTERNS</span>) - <span style="color: #0000b0;">1</span>;
+<span style="color: #531ab6;">static</span> <span style="color: #531ab6;">constexpr</span> <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">ROTATE_MASK</span> = (<span style="color: #0000b0;">1</span> &lt;&lt; <span style="color: #0000b0;">6</span>) - <span style="color: #0000b0;">1</span>;
 
-<span style="color: #46BDFF;">uint64_t</span> <span style="color: #fcfcfc;">GetPattern</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">uint64_t</span> <span style="color: #721045;">GetPattern</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row); <span style="color: #525863;">// </span><span style="color: #525863;">We only have one hash function</span>
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">pattern_idx</span> = hash &amp; PATTERN_MASK;
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">rotate</span> = (hash &gt;&gt; LOG_NUM_PATTERNS) &amp; ROTATE_MASK;
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">pattern</span> = Rotate64(PATTERNS[pattern_idx], rotate);
-    <span style="color: #FF16B0;">return</span> pattern;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row); <span style="color: #595959;">// We only have one hash function</span>
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">pattern_idx</span> = hash &amp; <span style="color: #0000b0;">PATTERN_MASK</span>;
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">rotate</span> = (hash &gt;&gt; <span style="color: #0000b0;">LOG_NUM_PATTERNS</span>) &amp; <span style="color: #0000b0;">ROTATE_MASK</span>;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">pattern</span> = <span style="color: #721045;">Rotate64</span>(<span style="color: #0000b0;">PATTERNS</span>[pattern_idx], rotate);
+    <span style="color: #531ab6;">return</span> pattern;
 }
 
-<span style="color: #46BDFF;">uint64_t</span> *<span style="color: #96A1FF;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #fcfcfc;">GetBlock</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">uint64_t</span> *<span style="color: #005f5f;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #721045;">GetBlock</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">int</span> <span style="color: #eedd82;">num_blocks</span> = m / 64;
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">hash</span> = ComputeHash(row);
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">block_idx</span> = (hash &gt;&gt; (ROTATE_BITS + LOG_NUM_PATTERNS)) % num_blocks;
-    <span style="color: #FF16B0;">return</span> <span style="color: #FF16B0;">reinterpret_cast</span>&lt;<span style="color: #46BDFF;">uint64_t</span> *&gt;(bv) + block_idx;
+    <span style="color: #8f0075;">int</span> <span style="color: #005e8b;">num_blocks</span> = m / <span style="color: #0000b0;">64</span>;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">hash</span> = <span style="color: #721045;">ComputeHash</span>(row);
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">block_idx</span> = (hash &gt;&gt; (<span style="color: #0000b0;">ROTATE_BITS</span> + <span style="color: #0000b0;">LOG_NUM_PATTERNS</span>)) % num_blocks;
+    <span style="color: #531ab6;">return</span> <span style="color: #721045;">reinterpret_cast</span>&lt;<span style="color: #8f0075;">uint64_t</span> *&gt;(bv) + block_idx;
 }
 
-<span style="color: #46BDFF;">void</span> <span style="color: #96A1FF;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #fcfcfc;">Insert</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">void</span> <span style="color: #005f5f;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #721045;">Insert</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">pattern</span> = GetPattern(row);
-    <span style="color: #46BDFF;">uint64_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    *block |= pattern;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">pattern</span> = <span style="color: #721045;">GetPattern</span>(row);
+    <span style="color: #8f0075;">uint64_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    *<span style="color: #005e8b;">block</span> |= pattern;
 }
 
-<span style="color: #46BDFF;">bool</span> <span style="color: #96A1FF;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #fcfcfc;">Query</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span>)
+<span style="color: #8f0075;">bool</span> <span style="color: #005f5f;">PatternedRegisterBlockedBloomFilter</span>::<span style="color: #721045;">Query</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;<span style="color: #005e8b;">row</span>)
 {
-    <span style="color: #46BDFF;">uint64_t</span> <span style="color: #eedd82;">pattern</span> = GetPattern(row);
-    <span style="color: #46BDFF;">uint64_t</span> *<span style="color: #eedd82;">block</span> = GetBlock(row);
-    <span style="color: #FF16B0;">return</span> *block &amp; pattern;
+    <span style="color: #8f0075;">uint64_t</span> <span style="color: #005e8b;">pattern</span> = <span style="color: #721045;">GetPattern</span>(row);
+    <span style="color: #8f0075;">uint64_t</span> *<span style="color: #005e8b;">block</span> = <span style="color: #721045;">GetBlock</span>(row);
+    <span style="color: #531ab6;">return</span> *block &amp; pattern;
 }
 </pre>
 </div>
@@ -663,8 +640,8 @@ a rotation of the bit pattern. The remaining bits can then be used for the block
 </div>
 </div>
 
-<div id="outline-container-org444b1ee" class="outline-2">
-<h2 id="org444b1ee"><span class="section-number-2">2.</span> Binary Hash Join</h2>
+<div id="outline-container-org54db319" class="outline-2">
+<h2 id="org54db319"><span class="section-number-2">2.</span> Binary Hash Join</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Hash Join is an algorithm for evaluating equijoins, where at least one of the join conditions is an equality between "key columns".
@@ -673,17 +650,17 @@ column values to build-side rows. Then, for each probe-side key, hash it, lookup
 rows (assuming an inner join).
 </p>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">Dataset</span> <span style="color: #fcfcfc;">InnerHashJoin</span>(<span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">build_side</span>, <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">probe_side</span>)
+<pre class="src src-cpp"><span style="color: #005f5f;">Dataset</span> <span style="color: #721045;">InnerHashJoin</span>(<span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">build_side</span>, <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">probe_side</span>)
 {
-    <span style="color: #46BDFF;">HashTable</span> <span style="color: #eedd82;">table</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : build_side)
+    <span style="color: #005f5f;">HashTable</span> <span style="color: #005e8b;">table</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : build_side)
         table.Insert(row);
 
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">result</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : probe_side)
-        <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">match</span> : table.Probe(row)) <span style="color: #525863;">// </span><span style="color: #525863;">You can have multiple build-side matches per probe-side row</span>
-            result.Insert(match + row); <span style="color: #525863;">// </span><span style="color: #525863;">Assuming `+` concatenates two rows</span>
-    <span style="color: #FF16B0;">return</span> result;
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">result</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : probe_side)
+        <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;match : table.Probe(row)) <span style="color: #595959;">// You can have multiple build-side matches per probe-side row</span>
+            result.Insert(match + row); <span style="color: #595959;">// Assuming `+` concatenates two rows</span>
+    <span style="color: #531ab6;">return</span> result;
 }
 </pre>
 </div>
@@ -698,24 +675,24 @@ possibilities for where to insert a Bloom filter:
 in the bloom filter first, and if <code>query</code> returns <code>false</code>, then the row is skipped.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">Dataset</span> <span style="color: #fcfcfc;">InnerHashJoin_BuildSideBloomFilter</span>(<span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">build_side</span>, <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">probe_side</span>)
+<pre class="src src-cpp"><span style="color: #005f5f;">Dataset</span> <span style="color: #721045;">InnerHashJoin_BuildSideBloomFilter</span>(<span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">build_side</span>, <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">probe_side</span>)
 {
-    <span style="color: #46BDFF;">HashTable</span> <span style="color: #eedd82;">table</span>;
-    <span style="color: #46BDFF;">BloomFilter</span> <span style="color: #eedd82;">bf</span>(build_side.size(), 0.01);
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : build_side)
+    <span style="color: #005f5f;">HashTable</span> <span style="color: #005e8b;">table</span>;
+    <span style="color: #005f5f;">BloomFilter</span> <span style="color: #005e8b;">bf</span>(build_side.size(), <span style="color: #0000b0;">0.01</span>);
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : build_side)
     {
         bf.Insert(row);
         table.Insert(row);
     }
 
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">result</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : probe_side)
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">result</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : probe_side)
     {
-        <span style="color: #FF16B0;">if</span>(bf.Query(row))
-            <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">match</span> : table.Probe(row)) <span style="color: #525863;">// </span><span style="color: #525863;">You can have multiple build-side matches per probe-side row</span>
-                result.Insert(match + row); <span style="color: #525863;">// </span><span style="color: #525863;">Assuming `+` concatenates two rows</span>
+        <span style="color: #531ab6;">if</span>(bf.Query(row))
+            <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;match : table.Probe(row)) <span style="color: #595959;">// You can have multiple build-side matches per probe-side row</span>
+                result.Insert(match + row); <span style="color: #595959;">// Assuming `+` concatenates two rows</span>
     }
-    <span style="color: #FF16B0;">return</span> result;
+    <span style="color: #531ab6;">return</span> result;
 }
 </pre>
 </div>
@@ -724,22 +701,22 @@ in the bloom filter first, and if <code>query</code> returns <code>false</code>,
 Then during the build phase, any build-side row that does not pass the bloom filter is skipped.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">Dataset</span> <span style="color: #fcfcfc;">InnerHashJoin_ProbeSideBloomFilter</span>(<span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">build_side</span>, <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">probe_side</span>)
+<pre class="src src-cpp"><span style="color: #005f5f;">Dataset</span> <span style="color: #721045;">InnerHashJoin_ProbeSideBloomFilter</span>(<span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">build_side</span>, <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">probe_side</span>)
 {
-    <span style="color: #46BDFF;">BloomFilter</span> <span style="color: #eedd82;">bf</span>(probe_side.size(), 0.01);
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : probe_side)
+    <span style="color: #005f5f;">BloomFilter</span> <span style="color: #005e8b;">bf</span>(probe_side.size(), <span style="color: #0000b0;">0.01</span>);
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : probe_side)
         bf.Insert(row);
 
-    <span style="color: #46BDFF;">HashTable</span> <span style="color: #eedd82;">table</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : build_side)
-        <span style="color: #FF16B0;">if</span>(bf.Query(row))
+    <span style="color: #005f5f;">HashTable</span> <span style="color: #005e8b;">table</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : build_side)
+        <span style="color: #531ab6;">if</span>(bf.Query(row))
             table.Insert(row);
 
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">result</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : probe_side)
-        <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">match</span> : table.Probe(row)) <span style="color: #525863;">// </span><span style="color: #525863;">You can have multiple build-side matches per probe-side row</span>
-            result.Insert(match + row); <span style="color: #525863;">// </span><span style="color: #525863;">Assuming `+` concatenates two rows</span>
-    <span style="color: #FF16B0;">return</span> result;
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">result</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : probe_side)
+        <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;match : table.Probe(row)) <span style="color: #595959;">// You can have multiple build-side matches per probe-side row</span>
+            result.Insert(match + row); <span style="color: #595959;">// Assuming `+` concatenates two rows</span>
+    <span style="color: #531ab6;">return</span> result;
 }
 </pre>
 </div>
@@ -756,8 +733,8 @@ we define them as follows:
 </ul>
 </div>
 
-<div id="outline-container-orge40301c" class="outline-3">
-<h3 id="orge40301c"><span class="section-number-3">2.1.</span> Build-side Bloom filter</h3>
+<div id="outline-container-org1726a91" class="outline-3">
+<h3 id="org1726a91"><span class="section-number-3">2.1.</span> Build-side Bloom filter</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Build-side Bloom filter allows skipping hash table lookups during the probe phase. Thus we can expect the number of hash table
@@ -798,8 +775,8 @@ When actually performing a hash join, a build-side Bloom filter allow for two mo
 </div>
 </div>
 
-<div id="outline-container-org805a3be" class="outline-3">
-<h3 id="org805a3be"><span class="section-number-3">2.2.</span> Probe-side Bloom filter</h3>
+<div id="outline-container-org488568b" class="outline-3">
+<h3 id="org488568b"><span class="section-number-3">2.2.</span> Probe-side Bloom filter</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Probe-side Bloom filter allows you to make the hash table much smaller at the cost of having to perform an extra scan. Hash
@@ -844,8 +821,8 @@ As before, a probe-side Bloom filter can help with either early-outputting or ea
 </div>
 </div>
 
-<div id="outline-container-orge3124a3" class="outline-3">
-<h3 id="orge3124a3"><span class="section-number-3">2.3.</span> Fuzzy Hash Join</h3>
+<div id="outline-container-org16bb286" class="outline-3">
+<h3 id="org16bb286"><span class="section-number-3">2.3.</span> Fuzzy Hash Join</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 The idea of a Fuzzy Hash Join is analogous to layering a Bloom filter over a build or probe: we perform a Hash Join
@@ -862,35 +839,35 @@ using <i>only</i> Bloom filters before proceeding with the full join. It works l
 In code:
 </p>
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">Dataset</span> <span style="color: #fcfcfc;">InnerHashJoin_Fuzzy</span>(<span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">build_side</span>, <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">probe_side</span>)
+<pre class="src src-cpp"><span style="color: #005f5f;">Dataset</span> <span style="color: #721045;">InnerHashJoin_Fuzzy</span>(<span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">build_side</span>, <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">probe_side</span>)
 {
-    <span style="color: #525863;">// </span><span style="color: #525863;">Step 1:</span>
-    <span style="color: #46BDFF;">BloomFilter</span> <span style="color: #eedd82;">bf_build</span>(build_side.size(), 0.01);
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : build_side)
+    <span style="color: #595959;">// Step 1:</span>
+    <span style="color: #005f5f;">BloomFilter</span> <span style="color: #005e8b;">bf_build</span>(build_side.size(), <span style="color: #0000b0;">0.01</span>);
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : build_side)
         bf.Insert(row);
 
-    <span style="color: #525863;">// </span><span style="color: #525863;">Step 2:</span>
-    <span style="color: #46BDFF;">BloomFilter</span> <span style="color: #eedd82;">bf_probe</span>(probe_side.size(), 0.01);
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">filtered_probe</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : probe_side)
-        <span style="color: #FF16B0;">if</span>(bf_build.Query(row))
+    <span style="color: #595959;">// Step 2:</span>
+    <span style="color: #005f5f;">BloomFilter</span> <span style="color: #005e8b;">bf_probe</span>(probe_side.size(), <span style="color: #0000b0;">0.01</span>);
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">filtered_probe</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : probe_side)
+        <span style="color: #531ab6;">if</span>(bf_build.Query(row))
         {
             bf_probe.Insert(row);
             filtered_probe.Insert(row);
         }
 
-    <span style="color: #525863;">// </span><span style="color: #525863;">Step 3:</span>
-    <span style="color: #46BDFF;">HashTable</span> <span style="color: #eedd82;">table</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : build_side)
-        <span style="color: #FF16B0;">if</span>(bf_probe.Query(row))
+    <span style="color: #595959;">// Step 3:</span>
+    <span style="color: #005f5f;">HashTable</span> <span style="color: #005e8b;">table</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : build_side)
+        <span style="color: #531ab6;">if</span>(bf_probe.Query(row))
             table.Insert(row);
 
-    <span style="color: #525863;">// </span><span style="color: #525863;">Step 4:</span>
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">result</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : filtered_probe)
-        <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">match</span> : table.Probe(row)) <span style="color: #525863;">// </span><span style="color: #525863;">You can have multiple build-side matches per probe-side row</span>
-            result.Insert(match + row); <span style="color: #525863;">// </span><span style="color: #525863;">Assuming `+` concatenates two rows</span>
-    <span style="color: #FF16B0;">return</span> result;
+    <span style="color: #595959;">// Step 4:</span>
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">result</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : filtered_probe)
+        <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;match : table.Probe(row)) <span style="color: #595959;">// You can have multiple build-side matches per probe-side row</span>
+            result.Insert(match + row); <span style="color: #595959;">// Assuming `+` concatenates two rows</span>
+    <span style="color: #531ab6;">return</span> result;
 }
 </pre>
 </div>
@@ -912,8 +889,8 @@ the intersection of the build and probe side is very small compared to both the 
 </div>
 </div>
 
-<div id="outline-container-org4ade51c" class="outline-2">
-<h2 id="org4ade51c"><span class="section-number-2">3.</span> Chain of Binary Hash Joins</h2>
+<div id="outline-container-org7a3b89c" class="outline-2">
+<h2 id="org7a3b89c"><span class="section-number-2">3.</span> Chain of Binary Hash Joins</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 We will now explore applications of Bloom filters for a chain of binary joins, of the form
@@ -923,27 +900,27 @@ so on until \(R_n\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">Dataset</span> <span style="color: #fcfcfc;">InnerHashJoinChain</span>(<span style="color: #96A1FF;">std</span>::<span style="color: #46BDFF;">vector</span>&lt;<span style="color: #46BDFF;">Dataset</span>&gt; <span style="color: #eedd82;">build_side</span>, <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">probe_side</span>)
+<pre class="src src-cpp"><span style="color: #005f5f;">Dataset</span> <span style="color: #721045;">InnerHashJoinChain</span>(<span style="color: #005f5f;">std</span>::<span style="color: #005f5f;">vector</span>&lt;<span style="color: #005f5f;">Dataset</span>&gt; <span style="color: #005e8b;">build_side</span>, <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">probe_side</span>)
 {
-    <span style="color: #96A1FF;">std</span>::<span style="color: #46BDFF;">vector</span>&lt;HashTable&gt; <span style="color: #eedd82;">tables</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Dataset</span> &amp;<span style="color: #eedd82;">ds</span> : build_side)
+    <span style="color: #005f5f;">std</span>::<span style="color: #005f5f;">vector</span>&lt;<span style="color: #005f5f;">HashTable</span>&gt; <span style="color: #005e8b;">tables</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Dataset</span> &amp;ds : build_side)
     {
-        <span style="color: #46BDFF;">HashTable</span> <span style="color: #eedd82;">table</span>;
-        <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : ds)
+        <span style="color: #005f5f;">HashTable</span> <span style="color: #005e8b;">table</span>;
+        <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : ds)
             table.Insert(row);
         tables.push_back(table);
     }
 
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">result</span> = probe_side;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">HashTable</span> &amp;<span style="color: #eedd82;">table</span> : tables)
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">result</span> = <span style="color: #005e8b;">probe_side</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">HashTable</span> &amp;table : tables)
     {
-        <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">next</span>;
-        <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : result)
-            <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">match</span> : table.Probe(row))
+        <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">next</span>;
+        <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : result)
+            <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;match : table.Probe(row))
                 next.Insert(match + row);
-        result = next;
+        <span style="color: #005e8b;">result</span> = next;
     }
-    <span style="color: #FF16B0;">return</span> result;
+    <span style="color: #531ab6;">return</span> result;
 }
 </pre>
 </div>
@@ -961,8 +938,8 @@ we would skip needlessly materializing multiplicatively many rows.</li>
 </ul>
 </div>
 
-<div id="outline-container-org500b9ac" class="outline-3">
-<h3 id="org500b9ac"><span class="section-number-3">3.1.</span> Bloom Filter Pushdown</h3>
+<div id="outline-container-org301db2c" class="outline-3">
+<h3 id="org301db2c"><span class="section-number-3">3.1.</span> Bloom Filter Pushdown</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 Notice that for join \(\Join_i\), its join key columns must become available somewhere inside of the prefix chain
@@ -995,22 +972,22 @@ and therefore must go through the pipeline to be output by \(\Join_i\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #46BDFF;">Dataset</span> <span style="color: #fcfcfc;">InnerHashJoinChain_BloomFilterPushdown</span>(
-    <span style="color: #96A1FF;">std</span>::<span style="color: #46BDFF;">vector</span>&lt;<span style="color: #46BDFF;">Dataset</span>&gt; <span style="color: #eedd82;">inputs</span>,
-    <span style="color: #96A1FF;">std</span>::<span style="color: #46BDFF;">vector</span>&lt;JoinInfo&gt; <span style="color: #eedd82;">join_infos</span>,
-    <span style="color: #96A1FF;">std</span>::<span style="color: #46BDFF;">vector</span>&lt;BloomFilter&gt; <span style="color: #eedd82;">filters</span> = {})
+<pre class="src src-cpp"><span style="color: #005f5f;">Dataset</span> <span style="color: #721045;">InnerHashJoinChain_BloomFilterPushdown</span>(
+    <span style="color: #005f5f;">std</span>::<span style="color: #005f5f;">vector</span>&lt;<span style="color: #005f5f;">Dataset</span>&gt; <span style="color: #005e8b;">inputs</span>,
+    <span style="color: #005f5f;">std</span>::<span style="color: #005f5f;">vector</span>&lt;<span style="color: #005f5f;">JoinInfo</span>&gt; <span style="color: #005e8b;">join_infos</span>,
+    <span style="color: #005f5f;">std</span>::<span style="color: #005f5f;">vector</span>&lt;<span style="color: #005f5f;">BloomFilter</span>&gt; filters = {})
 {
-    <span style="color: #FF16B0;">if</span>(inputs.size() == 1) <span style="color: #525863;">// </span><span style="color: #525863;">Base case, just return the probe side</span>
-        <span style="color: #FF16B0;">return</span> inputs[0];
+    <span style="color: #531ab6;">if</span>(inputs.size() == <span style="color: #0000b0;">1</span>) <span style="color: #595959;">// Base case, just return the probe side</span>
+        <span style="color: #531ab6;">return</span> inputs[<span style="color: #0000b0;">0</span>];
 
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">to_build</span> = inputs.back();
-    <span style="color: #46BDFF;">JoinInfo</span> <span style="color: #eedd82;">join_info</span> = join_infos.back(); <span style="color: #525863;">// </span><span style="color: #525863;">Holds information about key columns</span>
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">to_build</span> = inputs.back();
+    <span style="color: #005f5f;">JoinInfo</span> <span style="color: #005e8b;">join_info</span> = join_infos.back(); <span style="color: #595959;">// Holds information about key columns</span>
     inputs.pop_back();
     join_infos.pop_back();
 
-    <span style="color: #46BDFF;">HashTable</span> <span style="color: #eedd82;">table</span>;
-    <span style="color: #46BDFF;">BloomFilter</span> <span style="color: #eedd82;">filter</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : to_build)
+    <span style="color: #005f5f;">HashTable</span> <span style="color: #005e8b;">table</span>;
+    <span style="color: #005f5f;">BloomFilter</span> <span style="color: #005e8b;">filter</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : to_build)
     {
         table.Insert(row, join_info);
         filter.Insert(row, join_info);
@@ -1018,29 +995,29 @@ and therefore must go through the pipeline to be output by \(\Join_i\).
 
     filters.push_back(filter);
 
-    <span style="color: #96A1FF;">std</span>::<span style="color: #46BDFF;">vector</span>&lt;<span style="color: #46BDFF;">BloomFilter</span>&gt; <span style="color: #eedd82;">to_pushdown</span>;
-    <span style="color: #96A1FF;">std</span>::<span style="color: #46BDFF;">vector</span>&lt;<span style="color: #46BDFF;">BloomFilter</span>&gt; <span style="color: #eedd82;">to_evaluate_here</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">BloomFilter</span> &amp;<span style="color: #eedd82;">filter</span> : filters)
+    <span style="color: #005f5f;">std</span>::<span style="color: #005f5f;">vector</span>&lt;<span style="color: #005f5f;">BloomFilter</span>&gt; <span style="color: #005e8b;">to_pushdown</span>;
+    <span style="color: #005f5f;">std</span>::<span style="color: #005f5f;">vector</span>&lt;<span style="color: #005f5f;">BloomFilter</span>&gt; <span style="color: #005e8b;">to_evaluate_here</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">BloomFilter</span> &amp;filter : filters)
     {
-        <span style="color: #FF16B0;">if</span>(join_infos.back().ProbeSideContainsKeyColumns(join_info)) <span style="color: #525863;">// </span><span style="color: #525863;">If the probe side input contains the current key columns</span>
+        <span style="color: #531ab6;">if</span>(join_infos.back().ProbeSideContainsKeyColumns(join_info)) <span style="color: #595959;">// If the probe side input contains the current key columns</span>
             to_pushdown.push_back(filter);
-        <span style="color: #FF16B0;">else</span>
+        <span style="color: #531ab6;">else</span>
             to_evaluate_here.push_back(filter);
     }
 
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">probe_side</span> = InnerHashJoinChain_BloomFilterPushdown(inputs, join_infos, to_pushdown);
-    <span style="color: #46BDFF;">Dataset</span> <span style="color: #eedd82;">result</span>;
-    <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">row</span> : probe_side)
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">probe_side</span> = <span style="color: #721045;">InnerHashJoinChain_BloomFilterPushdown</span>(inputs, join_infos, to_pushdown);
+    <span style="color: #005f5f;">Dataset</span> <span style="color: #005e8b;">result</span>;
+    <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;row : probe_side)
     {
-        <span style="color: #46BDFF;">bool</span> <span style="color: #eedd82;">passes</span> = <span style="color: #96A1FF;">true</span>;
-        <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">BloomFilter</span> &amp;<span style="color: #eedd82;">filter</span> : to_evaluate_here)
-            passes &amp;= filter.Query(row);
+        <span style="color: #8f0075;">bool</span> <span style="color: #005e8b;">passes</span> = <span style="color: #0000b0;">true</span>;
+        <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">BloomFilter</span> &amp;filter : to_evaluate_here)
+            <span style="color: #005e8b;">passes</span> &amp;= filter.Query(row);
 
-        <span style="color: #FF16B0;">if</span>(passes)
-            <span style="color: #FF16B0;">for</span>(<span style="color: #FF16B0;">const</span> <span style="color: #46BDFF;">Row</span> &amp;<span style="color: #eedd82;">match</span> : table.Probe(row))
+        <span style="color: #531ab6;">if</span>(passes)
+            <span style="color: #531ab6;">for</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">Row</span> &amp;match : table.Probe(row))
                 result.Insert(match + row);
     }
-    <span style="color: #FF16B0;">return</span> result;
+    <span style="color: #531ab6;">return</span> result;
 }
 </pre>
 </div>
@@ -1048,23 +1025,20 @@ and therefore must go through the pipeline to be output by \(\Join_i\).
 </div>
 </div>
 
-<div id="outline-container-orgca9bf5b" class="outline-2">
-<h2 id="orgca9bf5b"><span class="section-number-2">4.</span> References</h2>
+<div id="outline-container-org1d9bb74" class="outline-2">
+<h2 id="org1d9bb74"><span class="section-number-2">4.</span> References</h2>
 <div class="outline-text-2" id="text-4">
 <p>
-[1] Broder, Andrei and Mitzenmacher, Michael, <i>Survey: Network Applications of Bloom Filters: A Survey.</i>, Internet Mathematics, 2003.</p>
+[1] Lang, Harald and Neumann, Thomas and Kemper, Alfons and Boncz, Peter, <i>Performance-Optimal Filtering: Bloom Overtakes Cuckoo at High Throughput</i>, VLDB Endowment, 2019.</p>
 
 <p>
-[2] Lang, Harald and Neumann, Thomas and Kemper, Alfons and Boncz, Peter, <i>Performance-Optimal Filtering: Bloom Overtakes Cuckoo at High Throughput</i>, VLDB Endowment, 2019.</p>
-
-<p>
-[3] Putze, Felix and Sanders, Peter and Singler, Johannes, <i>Cache-, Hash-, and Space-Efficient Bloom Filters</i>, Association for Computing Machinery, 2010.</p>
+[2] Putze, Felix and Sanders, Peter and Singler, Johannes, <i>Cache-, Hash-, and Space-Efficient Bloom Filters</i>, Association for Computing Machinery, 2010.</p>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Sasha</p>
-<p class="date">Created: 2022-01-13 Thu 16:21</p>
+<p class="date">Created: 2023-04-19 Wed 14:36</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
