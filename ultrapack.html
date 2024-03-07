@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-03-07 Thu 00:25 -->
+<!-- 2024-03-07 Thu 11:16 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ultrapacking: A Layer Over Bit-Packing</title>
@@ -233,34 +233,37 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org910b5aa">1. Introduction</a></li>
-<li><a href="#orga079ea6">2. Ultrapacking</a>
+<li><a href="#org87cf43c">1. Introduction</a></li>
+<li><a href="#org44aebaf">2. Ultrapacking</a>
 <ul>
-<li><a href="#orgc340a72">2.1. Choosing \(k\)</a></li>
+<li><a href="#org963b4cb">2.1. Choosing \(k\)</a></li>
 </ul>
 </li>
-<li><a href="#orgc5b48aa">3. Performance</a></li>
-<li><a href="#orgcd7cd9f">4. Conclusion</a></li>
+<li><a href="#org7c5ffb0">3. Performance</a></li>
+<li><a href="#org1b72b09">4. Conclusion</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org910b5aa" class="outline-2">
-<h2 id="org910b5aa"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-org87cf43c" class="outline-2">
+<h2 id="org87cf43c"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-When operating over large arrays of integers, it's frequently profitable to lightly compress the integers to save on memory bandwidth.
-One classic technique is called <i>bitpacking</i>: if every value fits within the range \([0, n)\), and \(n\) is representable in \(k\) bits,
-we can store a sequence of \(k\) -bit blocks. However, consider the case of \(n = 5\). With bitpacking, we need \(k = 3\) bits, despite \(3\)
-bits being able to represent \(8\) values, wasting \(\frac{3}{8}\) of the available space. 
+When operating over large arrays of integers, it's frequently profitable to lightly compress the
+integers to save on memory bandwidth. One classic technique is called <i>bitpacking</i>: if every value
+fits within the range \([0, n)\), and \(n\) is representable in \(b\) bits, we can store a sequence of
+\(b\) -bit blocks. However, consider the case of \(n = 5\). With bitpacking, we need \(b = 3\) bits,
+despite \(3\) bits being able to represent \(8\) values, wasting \(\frac{3}{8}\) of the available space. 
 </p>
 
 <p>
-The fundamental issue is that bitpacking uses \(k = \lceil \log_2{n} \rceil\) bits per value. For small \(k\), this ceil operation can
-waste a nontrivial amount of space (\(37.5\%\) in the case of \(n = 5\)!). To address this problem I propose a scheme called <i>ultrapacking</i>,
-which groups values together to use very close to \(k = \log_2{n}\) bits per value. Below is a plot of the space requirements for bitpacking
-and ultrapacking as a function of \(n\). Below that shows the percent space savings for ultrapack. Notice that the space savings drop to
-\(0\) when \(n\) is a power of \(2\), as in this case \(\lceil \log_2{n} \rceil = \log_2{n}\).
+The fundamental issue is that bitpacking uses \(b = \lceil \log_2{n} \rceil\) bits per value. For
+small \(b\), this ceil operation can waste a nontrivial amount of space (\(37.5\%\) in the case of
+\(n = 5\)). To address this problem I propose a scheme called <i>ultrapacking</i>, which groups values
+together to use very close to \(\log_2{n}\) bits per value. The first plot below shows space requirements
+for bitpacking and ultrapacking as a function of \(n\). The one below that shows the percent space
+savings yielded by ultrapacking. Notice that the space savings drop to \(0\) when \(n\) is a power of
+\(2\), as in this case \(\lceil \log_2{n} \rceil = \log_2{n}\).
 </p>
 
 <center>
@@ -269,58 +272,102 @@ and ultrapacking as a function of \(n\). Below that shows the percent space savi
 </div>
 </div>
 
-<div id="outline-container-orga079ea6" class="outline-2">
-<h2 id="orga079ea6"><span class="section-number-2">2.</span> Ultrapacking</h2>
+<div id="outline-container-org44aebaf" class="outline-2">
+<h2 id="org44aebaf"><span class="section-number-2">2.</span> Ultrapacking</h2>
 <div class="outline-text-2" id="text-2">
 <p>
-Suppose we have \(n = 10\), and we have a sequence of three values \([1, 5, 7]\). One way we could represent this sequence is using the
-number \(157\), which we obtain by concatenating the elements as digits in a number. The maximum number that we could construct
-this way is \(999\), which takes in \(10\) bits, meaning any group of \(3\) elements can be stored in \(10\) bits. Thus given a stream
-of these numbers we can pack them into these \(10\) -bit groups, and then bitpack those.
+As a motivating example, suppose we have \(n = 10\), and we want to compress a sequence of three
+values \([9, 0, 5]\). One way we could represent this sequence is using the number \(905\), which we
+obtain by concatenating the elements as digits in a number. The maximum number that we could construct
+this way is \(999\), which takes in \(10\) bits, meaning any group of \(3\) numbers can be stored in \(10\)
+bits. Thus given a stream of these numbers we can pack them into these \(10\) -bit groups, and then
+bitpack those.
 </p>
 
 <p>
-This gives an intuition for the compression scheme in its general form: Given an \(n\) and \(k\), take \(k\) elements from your input stream
-\(a_1, \dots, a_k\), and compute the number represented by \((a_1a_2\dots a_k)_n\). This number will be naturally stored in binary in
-the computer, and so we just bitpack that. Note that we need to do four groups to line up on a byte boundary when bitpacking.
+This gives an intuition for the compression scheme in its general form: Given an \(n\), take
+\(k\) elements from your input stream \(a_1, \dots, a_k\) into a <i>bundle</i>. Then, we compute the number
+represented by concatenating the bundle into  base \(n\) number \((a_1a_2\dots a_k)_n\). This number
+will be naturally stored in binary in the computer, and so we can just bitpack that into \(b\) bits.
+</p>
+
+<p>
+Since memory is byte-addressable, we can't just output \(b\) bits (\(10\) in our example). Instead,
+we must always output a multiple of \(8\) by compressing multiple bundles into a <i>group</i>. The
+number of bits in a group is given by \(LCM(b, 8)\), and so the number of bundles in a group is
+\(\frac{LCM(b, 8)}{8}\).
+</p>
+
+<p>
+Decompression is exactly the inverse process. 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-cpp"><span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Compress_Single_N_10_K_3</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">uint32_t</span> **<span style="color: #005e8b;">input</span>)
+<pre class="src src-cpp"><span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Compress_Bundle_N_10_K_3</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">uint32_t</span> **<span style="color: #005e8b;">input</span>)
 {
     <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">N</span> = 10;
     <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">K</span> = 3;
-    <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">result</span> = 0;
+    <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">bundle</span> = 0;
     <span style="color: #531ab6;">for</span>(<span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">i</span> = 0; i &lt; K; i++)
     {
-        res *= N;
-        res += input[i];
+        bundle *= N;
+        bundle += input[i];
     }
     (*input) += K;
-    <span style="color: #531ab6;">return</span> result;
+    <span style="color: #531ab6;">return</span> bundle;
 }
 
-<span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Compress_N_4_K_3</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">uint32_t</span> *<span style="color: #005e8b;">input</span>, <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">n</span>, <span style="color: #005f5f;">uint8_t</span> *<span style="color: #005e8b;">output</span>)
+<span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Compress_N_10_K_3</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">uint32_t</span> *<span style="color: #005e8b;">input</span>, <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">n</span>, <span style="color: #005f5f;">uint8_t</span> *<span style="color: #005e8b;">output</span>)
 {
     <span style="color: #531ab6;">const</span> <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">end</span> = input + n;
-    <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">ngroup</span> = 4; <span style="color: #595959;">// </span><span style="color: #595959;">LCM(10, 8) = 40 bits = 5 bytes, 4 groups</span>
+    <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group_length</span> = 4; <span style="color: #595959;">// </span><span style="color: #595959;">LCM(10, 8) = 40 bits = 5 bytes, 4 groups</span>
     <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group_bytes</span> = 5;
 
     <span style="color: #531ab6;">while</span>(input &lt; end)
     {
         <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group</span> = 0;
-        <span style="color: #531ab6;">for</span>(<span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">i</span> = 0; i &lt; group_size; i++)
-            group |= (Compress_Single_N_3_K_5(&amp;input) &lt;&lt; (10 * i));
-        *output = group;
+        <span style="color: #531ab6;">for</span>(<span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">i</span> = 0; i &lt; group_length; i++)
+            group |= (Compress_Bundle_N_10_K_3(&amp;input) &lt;&lt; (10 * i));
+        *(<span style="color: #005f5f;">uint64_t</span> *)output = group;
         output += group_bytes;
     }
 }
+
+<span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Decompress_Bundle_N_10_K_3</span>(<span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group</span>, <span style="color: #005f5f;">uint32_t</span> **<span style="color: #005e8b;">output</span>)
+{
+    <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">N</span> = 10;
+    <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">K</span> = 3;
+    <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">mask</span> = (1 &lt;&lt; N) - 1;
+    <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">bundle</span> = group &amp; mask;
+    <span style="color: #531ab6;">for</span>(<span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">i</span> = K - 1; i &gt;= 0; i--)
+    {
+        output[i] = bundle % N;
+        bundle /= N;
+    }
+    <span style="color: #531ab6;">return</span> (group &gt;&gt; N);
+}
+
+<span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Decompress_N_10_K_3</span>(<span style="color: #531ab6;">const</span> <span style="color: #005f5f;">uint8_t</span> *<span style="color: #005e8b;">input</span>, <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">n</span>, <span style="color: #005f5f;">uint32_t</span> *<span style="color: #005e8b;">output</span>)
+{
+    <span style="color: #531ab6;">const</span> <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">end</span> = output + n;
+    <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group_length</span> = 4; <span style="color: #595959;">// </span><span style="color: #595959;">LCM(10, 8) = 40 bits = 5 bytes, 4 groups</span>
+    <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group_bytes</span> = 5;
+
+    <span style="color: #531ab6;">while</span>(output &lt; end)
+    {
+        <span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group</span> = *(<span style="color: #005f5f;">uint64_t</span> *)input;
+        <span style="color: #531ab6;">for</span>(<span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">i</span> = 0; i &lt; group_length; i++)
+            group = Decompress_Bundle_N_10_K_3(group, &amp;output);
+        input += group_bytes;
+    }
+}
+
 </pre>
 </div>
 </div>
 
-<div id="outline-container-orgc340a72" class="outline-3">
-<h3 id="orgc340a72"><span class="section-number-3">2.1.</span> Choosing \(k\)</h3>
+<div id="outline-container-org963b4cb" class="outline-3">
+<h3 id="org963b4cb"><span class="section-number-3">2.1.</span> Choosing \(k\)</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 As we saw above, with \(n = 10\) and \(k = 3\), we have \(\frac{10}{3} = 3.33\) bits per value. Can we do better? 
@@ -361,8 +408,8 @@ detail, to allow us to bitpack using unaligned stores, we ensure that each group
 </div>
 </div>
 
-<div id="outline-container-orgc5b48aa" class="outline-2">
-<h2 id="orgc5b48aa"><span class="section-number-2">3.</span> Performance</h2>
+<div id="outline-container-org7c5ffb0" class="outline-2">
+<h2 id="org7c5ffb0"><span class="section-number-2">3.</span> Performance</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 To test this idea, I made a program that generates functions for all \(n\) up to \(255\), and compared it to my implementation of bitpacking.
@@ -377,8 +424,8 @@ at the low end, with a perofrmance cliff towards high \(n\). Nevertheless, \(3\)
 </div>
 </div>
 
-<div id="outline-container-orgcd7cd9f" class="outline-2">
-<h2 id="orgcd7cd9f"><span class="section-number-2">4.</span> Conclusion</h2>
+<div id="outline-container-org1b72b09" class="outline-2">
+<h2 id="org1b72b09"><span class="section-number-2">4.</span> Conclusion</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 Ultrapacking provides a way to eek out a bit more space-savings over traditional bitpacking. Future work could include vectorizing the
@@ -394,7 +441,7 @@ All code is available <a href="https://github.com/save-buffer/ultrapack">here</a
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Sasha Krassovsky</p>
-<p class="date">Created: 2024-03-07 Thu 00:25</p>
+<p class="date">Created: 2024-03-07 Thu 11:16</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

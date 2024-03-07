@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-03-07 Thu 00:25 -->
+<!-- 2024-03-07 Thu 11:16 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Modern Bloom Filters: 22x Faster!</title>
@@ -233,43 +233,43 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgb7508d9">1. Introduction</a>
+<li><a href="#orgfffd47a">1. Introduction</a>
 <ul>
-<li><a href="#org1d0defe">1.1. The Basic Bloom filter</a>
+<li><a href="#org973ca78">1.1. The Basic Bloom filter</a>
 <ul>
-<li><a href="#orgc0b0d29">1.1.1. Algorithm Description</a></li>
-<li><a href="#org38282ce">1.1.2. Choosing \(m\) and \(k\)</a></li>
-<li><a href="#orgd540480">1.1.3. Performance</a></li>
+<li><a href="#orgd18d512">1.1.1. Algorithm Description</a></li>
+<li><a href="#org96f5b5d">1.1.2. Choosing \(m\) and \(k\)</a></li>
+<li><a href="#orgdcd076b">1.1.3. Performance</a></li>
 </ul>
 </li>
-<li><a href="#org7b03738">1.2. Blocked Bloom Filters</a>
+<li><a href="#orgdccf4ce">1.2. Blocked Bloom Filters</a>
 <ul>
-<li><a href="#org1d49a34">1.2.1. Description</a></li>
-<li><a href="#org1d14e08">1.2.2. Performance</a></li>
+<li><a href="#orgfc67fbe">1.2.1. Description</a></li>
+<li><a href="#org2fa089b">1.2.2. Performance</a></li>
 </ul>
 </li>
-<li><a href="#orgb2aee3f">1.3. Register-Blocked Bloom Filters</a>
+<li><a href="#orge4ddf60">1.3. Register-Blocked Bloom Filters</a>
 <ul>
-<li><a href="#org4295bf2">1.3.1. Description</a></li>
-<li><a href="#orgf5bf78d">1.3.2. Performance</a></li>
+<li><a href="#org408e5c5">1.3.1. Description</a></li>
+<li><a href="#org2c01f13">1.3.2. Performance</a></li>
 </ul>
 </li>
-<li><a href="#org74c8589">1.4. Bit Patterns</a>
+<li><a href="#org0002c40">1.4. Bit Patterns</a>
 <ul>
-<li><a href="#org2f91df0">1.4.1. Description</a></li>
-<li><a href="#org600e45b">1.4.2. Performance</a></li>
+<li><a href="#org8ea86c5">1.4.1. Description</a></li>
+<li><a href="#org42e3302">1.4.2. Performance</a></li>
 </ul>
 </li>
-<li><a href="#orgf02ae09">1.5. Conclusion</a></li>
+<li><a href="#org8742246">1.5. Conclusion</a></li>
 </ul>
 </li>
-<li><a href="#org989b021">2. References</a></li>
+<li><a href="#org1d9bb74">2. References</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orgb7508d9" class="outline-2">
-<h2 id="orgb7508d9"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-orgfffd47a" class="outline-2">
+<h2 id="orgfffd47a"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Bloom filters are everywhere, from database engines to your web browser to operating system kernels.
@@ -290,8 +290,8 @@ new insertions are not valid.
 </p>
 </div>
 
-<div id="outline-container-org1d0defe" class="outline-3">
-<h3 id="org1d0defe"><span class="section-number-3">1.1.</span> The Basic Bloom filter</h3>
+<div id="outline-container-org973ca78" class="outline-3">
+<h3 id="org973ca78"><span class="section-number-3">1.1.</span> The Basic Bloom filter</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 Bloom filters are parameterized by \(n, \epsilon\), where \(n\) is the number of elements to be inserted and
@@ -309,8 +309,8 @@ probability \(1 - \epsilon\) or <code>true</code> with probability \(\epsilon\) 
 </ul>
 </div>
 
-<div id="outline-container-orgc0b0d29" class="outline-4">
-<h4 id="orgc0b0d29"><span class="section-number-4">1.1.1.</span> Algorithm Description</h4>
+<div id="outline-container-orgd18d512" class="outline-4">
+<h4 id="orgd18d512"><span class="section-number-4">1.1.1.</span> Algorithm Description</h4>
 <div class="outline-text-4" id="text-1-1-1">
 <p>
 An \((n, \epsilon)-\) Bloom filter \(B\) is an array of \(m\) bits and \(k\) hash functions, where \(m\) and \(k\) are picked in some
@@ -382,8 +382,8 @@ Similarly, to <code>query</code> we just check if all of the corresponding bits 
 </div>
 </div>
 
-<div id="outline-container-org38282ce" class="outline-4">
-<h4 id="org38282ce"><span class="section-number-4">1.1.2.</span> Choosing \(m\) and \(k\)</h4>
+<div id="outline-container-org96f5b5d" class="outline-4">
+<h4 id="org96f5b5d"><span class="section-number-4">1.1.2.</span> Choosing \(m\) and \(k\)</h4>
 <div class="outline-text-4" id="text-1-1-2">
 <p>
 For a given \(n, \epsilon\), we'd like to pick \(m, k\) such that \(m\) and \(k\) are minimized while respecting the bound on
@@ -420,8 +420,8 @@ Simply translating these bounds completes the bloom filter:
 </div>
 </div>
 
-<div id="outline-container-orgd540480" class="outline-4">
-<h4 id="orgd540480"><span class="section-number-4">1.1.3.</span> Performance</h4>
+<div id="outline-container-orgdcd076b" class="outline-4">
+<h4 id="orgdcd076b"><span class="section-number-4">1.1.3.</span> Performance</h4>
 <div class="outline-text-4" id="text-1-1-3">
 <p>
 I benchmarked the naive algorithm on my i9-9900K (G++ 12.2.0 with -O3, FPR set to 1%, <a href="https://github.com/save-buffer/bloomfilter_benchmarks">code</a>). The basic Bloom filter costs
@@ -436,8 +436,8 @@ stay right around 1%.
 </div>
 </div>
 
-<div id="outline-container-org7b03738" class="outline-3">
-<h3 id="org7b03738"><span class="section-number-3">1.2.</span> Blocked Bloom Filters</h3>
+<div id="outline-container-orgdccf4ce" class="outline-3">
+<h3 id="orgdccf4ce"><span class="section-number-3">1.2.</span> Blocked Bloom Filters</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 While conceptually elegant, the standard Bloom filter is extremely inefficient. Even if the Bloom filter fits entirely in cache,
@@ -446,8 +446,8 @@ since each bit is set with probability \(\frac{1}{2}\), a Bloom filter requires 
 </p>
 </div>
 
-<div id="outline-container-org1d49a34" class="outline-4">
-<h4 id="org1d49a34"><span class="section-number-4">1.2.1.</span> Description</h4>
+<div id="outline-container-orgfc67fbe" class="outline-4">
+<h4 id="orgfc67fbe"><span class="section-number-4">1.2.1.</span> Description</h4>
 <div class="outline-text-4" id="text-1-2-1">
 <p>
 The classic way to deal with cache misses is increasing locality, and Bloom filters are no different. We cannot hope to have
@@ -505,8 +505,8 @@ needed to compensate.
 </div>
 </div>
 
-<div id="outline-container-org1d14e08" class="outline-4">
-<h4 id="org1d14e08"><span class="section-number-4">1.2.2.</span> Performance</h4>
+<div id="outline-container-org2fa089b" class="outline-4">
+<h4 id="org2fa089b"><span class="section-number-4">1.2.2.</span> Performance</h4>
 <div class="outline-text-4" id="text-1-2-2">
 <p>
 The Blocked Bloom filter performs significantly better, hovering right around 30 cycles/op on the low end! Interestingly, probing
@@ -521,8 +521,8 @@ performance remains constant while build time grows. FPR is less predictable, bu
 </div>
 </div>
 
-<div id="outline-container-orgb2aee3f" class="outline-3">
-<h3 id="orgb2aee3f"><span class="section-number-3">1.3.</span> Register-Blocked Bloom Filters</h3>
+<div id="outline-container-orge4ddf60" class="outline-3">
+<h3 id="orge4ddf60"><span class="section-number-3">1.3.</span> Register-Blocked Bloom Filters</h3>
 <div class="outline-text-3" id="text-1-3">
 <p>
 A Register-Blocked Bloom filter (2) is a variant of a Blocked Bloom filter where the blocks are
@@ -531,8 +531,8 @@ consequence of this scheme is the SIMD-fication of the Bloom filter.
 </p>
 </div>
 
-<div id="outline-container-org4295bf2" class="outline-4">
-<h4 id="org4295bf2"><span class="section-number-4">1.3.1.</span> Description</h4>
+<div id="outline-container-org408e5c5" class="outline-4">
+<h4 id="org408e5c5"><span class="section-number-4">1.3.1.</span> Description</h4>
 <div class="outline-text-4" id="text-1-3-1">
 <p>
 Unlike the previous Bloom filters, which write bits to memory one at a time, Register-Blocked Bloom filters write all of their bits
@@ -576,8 +576,8 @@ repository has an AVX2 implementation.
 </div>
 </div>
 
-<div id="outline-container-orgf5bf78d" class="outline-4">
-<h4 id="orgf5bf78d"><span class="section-number-4">1.3.2.</span> Performance</h4>
+<div id="outline-container-org2c01f13" class="outline-4">
+<h4 id="org2c01f13"><span class="section-number-4">1.3.2.</span> Performance</h4>
 <div class="outline-text-4" id="text-1-3-2">
 <p>
 The register-blocked Bloom filter performs even better than the cache-line-blocked Bloom filter, dipping do just under
@@ -597,8 +597,8 @@ some poor interaction with my random number generator.
 </div>
 </div>
 
-<div id="outline-container-org74c8589" class="outline-3">
-<h3 id="org74c8589"><span class="section-number-3">1.4.</span> Bit Patterns</h3>
+<div id="outline-container-org0002c40" class="outline-3">
+<h3 id="org0002c40"><span class="section-number-3">1.4.</span> Bit Patterns</h3>
 <div class="outline-text-3" id="text-1-4">
 <p>
 We've now arrived at a point where computing the \(k\) hashes is eating a non-negligible number of cycles. The classic way
@@ -606,8 +606,8 @@ to avoid computing things is a lookup table.
 </p>
 </div>
 
-<div id="outline-container-org2f91df0" class="outline-4">
-<h4 id="org2f91df0"><span class="section-number-4">1.4.1.</span> Description</h4>
+<div id="outline-container-org8ea86c5" class="outline-4">
+<h4 id="org8ea86c5"><span class="section-number-4">1.4.1.</span> Description</h4>
 <div class="outline-text-4" id="text-1-4-1">
 <p>
 Before, we were mapping hashes to bit patterns on-the-fly. The bit pattern approach the hash as an index into a table of pre-generated
@@ -658,8 +658,8 @@ The Patterned Bloom Filter requires only one hash, unlike the previous ones whic
 </div>
 </div>
 
-<div id="outline-container-org600e45b" class="outline-4">
-<h4 id="org600e45b"><span class="section-number-4">1.4.2.</span> Performance</h4>
+<div id="outline-container-org42e3302" class="outline-4">
+<h4 id="org42e3302"><span class="section-number-4">1.4.2.</span> Performance</h4>
 <div class="outline-text-4" id="text-1-4-2">
 <p>
 With this final optimization, we've arrived at the "ultimate" Bloom filter: 2.5 cycles/op, with a FPR that's not worse than the
@@ -673,8 +673,8 @@ and number of patterns.
 </div>
 </div>
 
-<div id="outline-container-orgf02ae09" class="outline-3">
-<h3 id="orgf02ae09"><span class="section-number-3">1.5.</span> Conclusion</h3>
+<div id="outline-container-org8742246" class="outline-3">
+<h3 id="org8742246"><span class="section-number-3">1.5.</span> Conclusion</h3>
 <div class="outline-text-3" id="text-1-5">
 <p>
 As you can see, Bloom filters have come along way since they were first created. By sacrificing some FPR and tuning for our hardware,
@@ -694,8 +694,8 @@ Code for benchmarks can be found <a href="https://github.com/save-buffer/bloomfi
 </div>
 </div>
 
-<div id="outline-container-org989b021" class="outline-2">
-<h2 id="org989b021"><span class="section-number-2">2.</span> References</h2>
+<div id="outline-container-org1d9bb74" class="outline-2">
+<h2 id="org1d9bb74"><span class="section-number-2">2.</span> References</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 [1] Adam Kirsch and Michael Mitzenmacher, <i>Less Hashing, Same Performance: Building a Better Bloom Filter</i>, Springer Berlin Heidelberg, 2006.</p>
@@ -710,7 +710,7 @@ Code for benchmarks can be found <a href="https://github.com/save-buffer/bloomfi
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Sasha Krassovsky</p>
-<p class="date">Created: 2024-03-07 Thu 00:25</p>
+<p class="date">Created: 2024-03-07 Thu 11:16</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
