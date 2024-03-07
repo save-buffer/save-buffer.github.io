@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-03-07 Thu 11:16 -->
+<!-- 2024-03-07 Thu 15:26 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ultrapacking: A Layer Over Bit-Packing</title>
@@ -241,6 +241,7 @@
 </li>
 <li><a href="#org7c5ffb0">3. Performance</a></li>
 <li><a href="#org1b72b09">4. Conclusion</a></li>
+<li><a href="#org4f7b11c">5. References</a></li>
 </ul>
 </div>
 </div>
@@ -249,20 +250,35 @@
 <h2 id="org87cf43c"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-When operating over large arrays of integers, it's frequently profitable to lightly compress the
-integers to save on memory bandwidth. One classic technique is called <i>bitpacking</i>: if every value
-fits within the range \([0, n)\), and \(n\) is representable in \(b\) bits, we can store a sequence of
-\(b\) -bit blocks. However, consider the case of \(n = 5\). With bitpacking, we need \(b = 3\) bits,
-despite \(3\) bits being able to represent \(8\) values, wasting \(\frac{3}{8}\) of the available space. 
+When dealing with integer arrays, applications often perform some form of lightweight
+compression. Columnar database engines, for instance, typically compress integer columns
+to both reduce storage space and increase effective memory bandwidth (i.e. scan more values per byte). 
 </p>
 
 <p>
+Lightweight compression is a very well-studied problem, with numerous variants on the four classic
+classic techniques: bitpacking, dictionary, delta, and frame-of-reference. Some research shows how
+well they compose, as in BtrBlocks (2). Other research provides variants
+on these techniques to expose opportunities for vectorization or otherwise increase performance
+(1). 
+</p>
+
+<p>
+In this post, I want to explore a layer on top of bitpacking that provides additional space savings.
+Bitpacking works by storing values in the minimum number of bits possible. If we know that every
+element fits in the range \([0, n)\), and \(n\) is representable in \(b\) bits, we can store a sequence
+of \(b\) -bit blocks contiguously in memory.
+</p>
+
+<p>
+But consider the case of \(n = 5\). With ordinary bitpacking, we need \(b = 3\) bits, despite
+\(3\) bits holding \(8\) values, wasting \(\frac{3}{8}\) of the available space. 
 The fundamental issue is that bitpacking uses \(b = \lceil \log_2{n} \rceil\) bits per value. For
 small \(b\), this ceil operation can waste a nontrivial amount of space (\(37.5\%\) in the case of
 \(n = 5\)). To address this problem I propose a scheme called <i>ultrapacking</i>, which groups values
-together to use very close to \(\log_2{n}\) bits per value. The first plot below shows space requirements
+together to use nearly \(\log_2{n}\) bits per value. The first plot below shows space requirements
 for bitpacking and ultrapacking as a function of \(n\). The one below that shows the percent space
-savings yielded by ultrapacking. Notice that the space savings drop to \(0\) when \(n\) is a power of
+savings. Notice that the space savings drop to \(0\) when \(n\) is a power of
 \(2\), as in this case \(\lceil \log_2{n} \rceil = \log_2{n}\).
 </p>
 
@@ -278,28 +294,24 @@ savings yielded by ultrapacking. Notice that the space savings drop to \(0\) whe
 <p>
 As a motivating example, suppose we have \(n = 10\), and we want to compress a sequence of three
 values \([9, 0, 5]\). One way we could represent this sequence is using the number \(905\), which we
-obtain by concatenating the elements as digits in a number. The maximum number that we could construct
-this way is \(999\), which takes in \(10\) bits, meaning any group of \(3\) numbers can be stored in \(10\)
-bits. Thus given a stream of these numbers we can pack them into these \(10\) -bit groups, and then
+obtain by concatenating the elements as digits in a number. The maximum possible number in this
+scheme is \(999\), which takes \(10\) bits. In other words, <i>any</i> group of \(3\) numbers can be stored
+in \(10\) bits. So given a stream of these numbers we can pack them into these \(10\) -bit groups, and then
 bitpack those.
 </p>
 
 <p>
 This gives an intuition for the compression scheme in its general form: Given an \(n\), take
-\(k\) elements from your input stream \(a_1, \dots, a_k\) into a <i>bundle</i>. Then, we compute the number
-represented by concatenating the bundle into  base \(n\) number \((a_1a_2\dots a_k)_n\). This number
-will be naturally stored in binary in the computer, and so we can just bitpack that into \(b\) bits.
+\(k\) elements from your input stream \(a_1, \dots, a_k\) to form a <i>bundle</i>. Then, compute the number
+represented by concatenating the bundle into a base \(n\) number \((a_1a_2\dots a_k)_n\). The computer
+will naturally store this number in binary using \(b\) bits, which we can bitpack as normal.
 </p>
 
 <p>
-Since memory is byte-addressable, we can't just output \(b\) bits (\(10\) in our example). Instead,
-we must always output a multiple of \(8\) by compressing multiple bundles into a <i>group</i>. The
-number of bits in a group is given by \(LCM(b, 8)\), and so the number of bundles in a group is
+Of course, since memory is byte-addressable, we can't just output \(b\) bits (\(10\) in our example).
+Instead, we must always output a multiple of \(8\) bits by compressing multiple bundles into a <i>group</i>.
+The number of bits in a group is given by \(LCM(b, 8)\), and so the number of bundles in a group is
 \(\frac{LCM(b, 8)}{8}\).
-</p>
-
-<p>
-Decompression is exactly the inverse process. 
 </p>
 
 <div class="org-src-container">
@@ -332,8 +344,16 @@ Decompression is exactly the inverse process.
         output += group_bytes;
     }
 }
+</pre>
+</div>
 
-<span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Decompress_Bundle_N_10_K_3</span>(<span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group</span>, <span style="color: #005f5f;">uint32_t</span> **<span style="color: #005e8b;">output</span>)
+<p>
+Decompression is exactly the inverse process, decomposing a base \(n\) number into its constitutent
+digits.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #005f5f;">uint64_t</span> <span style="color: #721045;">Decompress_Bundle_N_10_K_3</span>(<span style="color: #005f5f;">uint64_t</span> <span style="color: #005e8b;">group</span>, <span style="color: #005f5f;">uint32_t</span> **<span style="color: #005e8b;">output</span>)
 {
     <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">N</span> = 10;
     <span style="color: #531ab6;">constexpr</span> <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">K</span> = 3;
@@ -361,7 +381,6 @@ Decompression is exactly the inverse process.
         input += group_bytes;
     }
 }
-
 </pre>
 </div>
 </div>
@@ -374,9 +393,10 @@ As we saw above, with \(n = 10\) and \(k = 3\), we have \(\frac{10}{3} = 3.33\) 
 </p>
 
 <p>
-The absolute minimum we'd need is \(\log_2{10} = 3.32\), which is very close! How did I find this \(k\)? Brute force!
-For a given \(n\), we simply iterating through every \(k\) and see which \(k\) gives the minimum bits per value. As a slight
-detail, to allow us to bitpack using unaligned stores, we ensure that each group consumes at most 56 bits.
+The absolute minimum we'd need is \(\log_2{10} = 3.32\), which is quite close. How did I find this \(k\)? Brute force!
+For a given \(n\), we simply iterate through every \(k\) and see which \(k\) gives the minimum bits per value. As a slight
+detail, to allow us to bitpack using unaligned 64-bit stores, we ensure that each group consumes at most 56 bits.
+We also bias the packing slightly to prefer smaller bundles.
 </p>
 
 <div class="org-src-container">
@@ -412,10 +432,13 @@ detail, to allow us to bitpack using unaligned stores, we ensure that each group
 <h2 id="org7c5ffb0"><span class="section-number-2">3.</span> Performance</h2>
 <div class="outline-text-2" id="text-3">
 <p>
-To test this idea, I made a program that generates functions for all \(n\) up to \(255\), and compared it to my implementation of bitpacking.
-Please note that this is all scalar code. Further work could go into trying to vectorize these. I measured on an array of 1 million
-\(32\) -bit integers for compression and decompression. Overall, compression performance is not bad, about 2-3x slower than bitpacking
-at the low end, with a perofrmance cliff towards high \(n\). Nevertheless, \(3\) cycles/value is still billions of integers per second! 
+To test this idea, I made a program that generates functions for all \(n\) up to \(255\), and
+compared it to my implementation of bitpacking. Please note that this is all scalar code.
+Further work could go into trying to vectorize these. I benchmarked compressing and decompressing
+an array of 1 million \(32\) -bit integers. Overall, compression performance is not bad, about
+2-3x slower than ordinary bitpacking at the low end. The slowdown was expected, as compression
+and decompression involve multiplications, divisions, and mods that are much slower than simple shifts.
+Nevertheless, \(3\) cycles/value is still billions of integers per second!
 </p>
 
 <center>
@@ -428,9 +451,10 @@ at the low end, with a perofrmance cliff towards high \(n\). Nevertheless, \(3\)
 <h2 id="org1b72b09"><span class="section-number-2">4.</span> Conclusion</h2>
 <div class="outline-text-2" id="text-4">
 <p>
-Ultrapacking provides a way to eek out a bit more space-savings over traditional bitpacking. Future work could include vectorizing the
-implementation, and investigating filter and projection pushdowns. As it stands, the space savings don't seem worth the performance hit.
-Nevertheless, I hope this experiment was at least mildly entertaining. Thanks for reading!
+Ultrapacking provides a way to eek out a bit more space-savings over traditional bitpacking. Future
+work could include vectorizing the implementation, and investigating filter and projection pushdowns.
+As it stands, the space savings don't seem worth the performance hit.
+Still, I hope this experiment was at least mildly entertaining. Thanks for reading!
 </p>
 
 <p>
@@ -438,10 +462,21 @@ All code is available <a href="https://github.com/save-buffer/ultrapack">here</a
 </p>
 </div>
 </div>
+
+<div id="outline-container-org4f7b11c" class="outline-2">
+<h2 id="org4f7b11c"><span class="section-number-2">5.</span> References</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+[1] Daniel Lemire and Leonid Boytsov, <i>Decoding Billions of Integers Per Second Through Vectorization</i>, arXiv, 2012.</p>
+
+<p>
+[2] Maximilian Kuschewski and David Sauerwein and Adnan Alhomssi and Viktor Leis, <i>Btrblocks: Efficient Columnar Compression for Data Lakes</i>, Proceedings of the ACM on Management of Data, 2023.</p>
+</div>
+</div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Sasha Krassovsky</p>
-<p class="date">Created: 2024-03-07 Thu 11:16</p>
+<p class="date">Created: 2024-03-07 Thu 15:26</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
