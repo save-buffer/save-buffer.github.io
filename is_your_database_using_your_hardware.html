@@ -6,7 +6,7 @@
 <!-- 2024-06-12 Wed 13:09 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sasha's Site</title>
+<title>Is your database fully using your hardware? Probably not!</title>
 <meta name="author" content="Sasha Krassovsky" />
 <meta name="generator" content="Org Mode" />
 <style>
@@ -193,51 +193,135 @@
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   .org-svg { }
 </style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
 </head>
 <body>
 <div id="content" class="content">
-<h1 class="title">Sasha's Site</h1>
-
-<div id="outline-container-orgef43b44" class="outline-2">
-<h2 id="orgef43b44">Bio</h2>
-<div class="outline-text-2" id="text-orgef43b44">
+<h1 class="title">Is your database fully using your hardware? Probably not!</h1>
 <p>
-My name is Sasha, and I've been a passionate programmer my whole life. I started off writing games,
-and around high school I became deeply interested in software performance. Out of high school, I found
-myself in the interned at MemSQL (now called SingleStore), working on SIMD-fying the columnar
-query execution. I've stayed in databases since, working at Voltron Data and now finding myself at
-Neon. I love messing with new hardware, new instruction set extensions, compilers, and basically
-any other subfield of computing. 
-</p>
-</div>
-</div>
-
-<div id="outline-container-org8389b11" class="outline-2">
-<h2 id="org8389b11">Blog</h2>
-<div class="outline-text-2" id="text-org8389b11">
-<ul class="org-ul">
-<li><a href="is_your_database_using_your_hardware.html">Is your database fully using your hardware? Probably not!</a></li>
-<li><a href="ultrapack.html">Ultrapacking</a></li>
-<li><a href="bloom_filter.html">Bloom Filters</a></li>
-</ul>
-</div>
-</div>
-
-<div id="outline-container-orgf2e01aa" class="outline-2">
-<h2 id="orgf2e01aa">Contact</h2>
-<div class="outline-text-2" id="text-orgf2e01aa">
-<p>
-krassovskysashaATgmail.com <br />
-<a href="https://twitter.com/bztree">Twitter</a> <br />
-<a href="https://www.linkedin.com/in/sashka/">LinkedIn</a> <br />
+Lately I've been thinking about this notion of operational intensity (2), and
+it occurred to me that it's completely missing from the database community. The first advice the HPC
+people always give is: compute a roofline of your workload, and then ensure your implementation
+meets it. And yet somehow this methodology is missing from the database world!
 </p>
 
 <p>
-For a while I was annoyed at all of the AI spam on Hacker News, so I half-jokingly made
-<a href="./no_ai/index.html">AI-less Hacker News</a>.
+Usually people benchmark their data analytics system on TPC-H, a standard set of 22 SQL queries over
+a standard set of 8 tables. The size of the tables changes based on the scale factor (SF). For example,
+SF1 corresponds to a 1 GB CSV file and SF1000 corresponds to a 1TB CSV file. The age-old game is to
+make your system run the queries faster and write a sweet blog post about it. But as the
+authors of (1) note, that's almost never a fair comparison.
 </p>
+
+<p>
+But taking a step back, why are we even comparing different systems against each other? What does
+it mean to be fast, in the absolute sense? Merely comparing two systems tells us which is <i>faster</i>,
+but not which is <i>fast</i>. No database benchmark I've seen compares itself to the roofline, and so we
+don't even know what to target.
+</p>
+
+<p>
+The roofline performance can be calculated using the <i>operational intensity</i>. Operational
+intensity is simply the ratio of operations performed to bytes scanned from memory.
+<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> Once data is in the cache, we don't consider it again.
+</p>
+
+<p>
+Operational intensity lets us determine if our query is memory-bound or compute-bound. If our computer can do
+\(P\) ops/sec and has \(B\) bytes/sec of memory bandwidth, and our query has an operational intensity of \(I\), then
+if \(I > \frac{P}{B}\), the query is compute-bound, and otherwise it's memory-bound. 
+</p>
+
+<p>
+Computing the operational intensity of a query is straight-forward: take a physical query plan and count up
+the number of operations per row. Similarly, measure the number of bytes scanned, and divide them. For example,
+here is my calculation of the operational intensity of TPC-H Q1:
+</p>
+
+<center>
+<img src="./img/tpch_q1_arithmetic_intensity.jpeg" width="45%"/>
+</center>
+
+<p>
+My machine has \(130\) GB/s of memory bandwidth and has four ALUs per core clocking at $4$GHz with \(24\) cores.
+With \(B = 130 \cdot 10^9\) and \(P = 24 \cdot 4 \cdot 4 \cdot 10^9 = 384 \cdot 10^9\),
+\(\frac{P}{B} = \frac{384}{130} = 2.95\). According to my above calculation, \(I = \frac{11}{36} \approx 0.31\)
+which is <i>much</i> less than \(2.95\). So we expect this query plan to be memory-bound, and run at my
+bandwidth of \(130\) GB/s. Notice that the maximum operations-per-second is equal to
+\(B \cdot I = 130 \cdot 10^9 \cdot \frac{11}{36} \approx 39.7 \cdot 10^9\), meaning only
+\(\frac{39.7}{4 \cdot 4} \approx 2.5\) cores is sufficient to handle this query.
+</p>
+
+<p>
+The Lineitem table at scale factor 100 has \(600,037,902\) rows, corresponding to \(20.12\) GB scanned (with the 36
+bytes/row computed above). DuckDB executes the query in 0.4 sec, indicating a speed of approximately \(80\) GB/s,
+well below the theoretical \(130\) GB/s <sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>.
+</p>
+
+<p>
+The story doesn't end here. In my next post, I'll talk about what can be done to shift the balance between
+memory bandwidth and operations to more closely match the machine (spoilers: compression and SIMD).
+</p>
+
+<div id="outline-container-orgcc0097b" class="outline-2">
+<h2 id="orgcc0097b">References</h2>
+<div class="outline-text-2" id="text-orgcc0097b">
+<p>
+[1] Mark Raasveldt and Pedro Holanda and Tim Gubner and Hannes M{\"u}hleisen, <i>Fair Benchmarking Considered Difficult</i>, 2018.</p>
+
+<p>
+[2] Samuel Williams and Andrew Waterman and David Patterson, <i>Roofline</i>, Communications of the ACM, 2009.</p>
 </div>
 </div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Operational intensity is subtly different from arithmetic intensity, which is popular in Machine Learning.
+Arithmetic intensity includes the data scanned from caches, while operational intensity only includes DRAM
+(2)</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Though in fairness to DuckDB, they're probably aiming to saturate
+SSD bandwidths, which are around \(4.5\) GB/s.</p></div></div>
+
+
+</div>
+</div></div>
+<div id="postamble" class="status">
+<p class="author">Author: Sasha Krassovsky</p>
+<p class="date">Created: 2024-06-12 Wed 13:09</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>
