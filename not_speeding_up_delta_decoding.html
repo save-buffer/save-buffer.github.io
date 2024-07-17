@@ -6,7 +6,7 @@
 <!-- 2024-07-17 Wed 00:35 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Is your database fully using your hardware? Probably not!</title>
+<title>Not Speeding Up Delta Decoding With Value Speculation</title>
 <meta name="author" content="Sasha Krassovsky" />
 <meta name="generator" content="Org Mode" />
 <style>
@@ -228,96 +228,93 @@
 </head>
 <body>
 <div id="content" class="content">
-<h1 class="title">Is your database fully using your hardware? Probably not!</h1>
+<h1 class="title">Not Speeding Up Delta Decoding With Value Speculation</h1>
 <p>
-Lately I've been thinking about this notion of operational intensity (2), and
-it occurred to me that it's completely missing from the database community. The first advice the HPC
-people always give is: compute a roofline of your workload, and then ensure your implementation
-meets it. And yet somehow this methodology is missing from the database world!
+I came across this <a href="https://mazzo.li/posts/value-speculation.html">very cool article</a> (1) about "value speculation", where you speculate on the value of a
+variable that's dependent on the previous iteration of the loop in hopes of eliminating the effect of data
+dependencies in the common case. I decided to give it a try for accelerating Delta decoding. Spoiler: it didn't work. But
+I still learned something, and maybe you will too.
 </p>
 
 <p>
-Usually people benchmark their data analytics system on TPC-H, a standard set of 22 SQL queries over
-a standard set of 8 tables. The size of the tables changes based on the scale factor (SF). For example,
-SF1 corresponds to a 1 GB CSV file and SF1000 corresponds to a 1TB CSV file. The age-old game is to
-make your system run the queries faster and write a sweet blog post about it. But as the
-authors of (1) note, that's almost never a fair comparison.
+Delta encoding is quite simple: rather than storing a sequence of values, store a sequence of differences between successive
+values. Notice that this scheme requires each loop iteration to keep some data around from the previous iteration, introducing
+a data dependency.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #005f5f;">void</span> <span style="color: #721045;">DeltaDecode</span>(<span style="color: #005f5f;">uint32_t</span> *<span style="color: #005e8b;">compressed</span>, <span style="color: #005f5f;">uint32_t</span> *<span style="color: #005e8b;">uncompressed</span>, <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">n</span>)
+{
+    <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">prev</span> = 0;
+    <span style="color: #531ab6;">for</span>(<span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">i</span> = 0; i &lt; n; i++)
+    {
+        <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">delta</span> = compressed[i];
+        <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">val</span> = prev + delta;
+        uncompressed[i] = val;
+        prev = val;
+    }
+}
+</pre>
+</div>
+
+<p>
+What if we could somehow "guess" the value from the previous iteration? In my contrived example, suppose there's a
+90% chance that each value is equal to some predicted value. In theory, we could speculate to the next loop iteration rather
+than wait on the load of the `compressed` value.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #005f5f;">void</span> <span style="color: #721045;">DeltaDecode_Speculative</span>(
+    <span style="color: #005f5f;">uint32_t</span> *<span style="color: #005e8b;">compressed</span>,
+    <span style="color: #005f5f;">uint32_t</span> *<span style="color: #005e8b;">uncompressed</span>,
+    <span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">n</span>,
+    <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">probably_value</span>)
+{
+    <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">prev</span> = 0;
+    <span style="color: #531ab6;">for</span>(<span style="color: #005f5f;">size_t</span> <span style="color: #005e8b;">i</span> = 0; i &lt; n; i++)
+    {
+        <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">delta</span> = compressed[i];
+        <span style="color: #005f5f;">uint32_t</span> <span style="color: #005e8b;">val</span> = prev + delta;
+        <span style="color: #531ab6;">if</span>(val == probably_value)
+        {
+            uncompressed[i] = probably_value;
+            prev = probably_value;
+        }
+        <span style="color: #531ab6;">else</span>
+        {
+            uncompressed[i] = val;
+            prev = val;
+        }
+    }
+}
+</pre>
+</div>
+
+<p>
+Unfortunately, this ends up being roughly twice as slow. The original takes about \(1.03\) cycles/value while the speculative
+takes \(2.6\) cycles/value. Perf explains why: although we mispredict very few branches, we simply execute way more instructions
+(22,510,310 insns vs 34,610,360 insns). Plus, although we may potentially skip a read from the cache, we still must write the
+result back, making the optimization moot.
 </p>
 
 <p>
-But taking a step back, why are we even comparing different systems against each other? What does
-it mean to be fast, in the absolute sense? Merely comparing two systems tells us which is <i>faster</i>,
-but not which is <i>fast</i>. No database benchmark I've seen compares itself to the roofline, and so we
-don't even know what to target.
+And this makes me appreciate the details of the setup in original post: the value is easily predictable AND the loop
+is performing an aggregation. Since the result is kept in a register, it never touches the cache in the common case. And
+so I conclude that value speculation does not apply when the result is an array. 
 </p>
 
 <p>
-The roofline performance can be calculated using the <i>operational intensity</i>. Operational
-intensity is simply the ratio of operations performed to bytes scanned from memory.
-<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> Once data is in the cache, we don't consider it again.
+Source code available <a href="https://github.com/save-buffer/delta_decoding_value_speculation">here</a>.
 </p>
 
+<div id="outline-container-org0692993" class="outline-2">
+<h2 id="org0692993">References</h2>
+<div class="outline-text-2" id="text-org0692993">
 <p>
-Operational intensity lets us determine if our query is memory-bound or compute-bound. If our computer can do
-\(P\) ops/sec and has \(B\) bytes/sec of memory bandwidth, and our query has an operational intensity of \(I\), then
-if \(I > \frac{P}{B}\), the query is compute-bound, and otherwise it's memory-bound. 
-</p>
-
-<p>
-Computing the operational intensity of a query is straight-forward: take a physical query plan and count up
-the number of operations per row. Similarly, measure the number of bytes scanned, and divide them. For example,
-here is my calculation of the operational intensity of TPC-H Q1:
-</p>
-
-<center>
-<img src="./img/tpch_q1_arithmetic_intensity.jpeg" width="45%"/>
-</center>
-
-<p>
-My machine has \(130\) GB/s of memory bandwidth and has four ALUs per core clocking at $4$GHz with \(24\) cores.
-With \(B = 130 \cdot 10^9\) and \(P = 24 \cdot 4 \cdot 4 \cdot 10^9 = 384 \cdot 10^9\),
-\(\frac{P}{B} = \frac{384}{130} = 2.95\). According to my above calculation, \(I = \frac{11}{36} \approx 0.31\)
-which is <i>much</i> less than \(2.95\). So we expect this query plan to be memory-bound, and run at my
-bandwidth of \(130\) GB/s. Notice that the maximum operations-per-second is equal to
-\(B \cdot I = 130 \cdot 10^9 \cdot \frac{11}{36} \approx 39.7 \cdot 10^9\), meaning only
-\(\frac{39.7}{4 \cdot 4} \approx 2.5\) cores is sufficient to handle this query.
-</p>
-
-<p>
-The Lineitem table at scale factor 100 has \(600,037,902\) rows, corresponding to \(20.12\) GB scanned (with the 36
-bytes/row computed above). DuckDB executes the query in 0.4 sec, indicating a speed of approximately \(80\) GB/s,
-well below the theoretical \(130\) GB/s <sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>.
-</p>
-
-<p>
-The story doesn't end here. In my next post, I'll talk about what can be done to shift the balance between
-memory bandwidth and operations to more closely match the machine (spoilers: compression and SIMD).
-</p>
-
-<div id="outline-container-org27b4ca0" class="outline-2">
-<h2 id="org27b4ca0">References</h2>
-<div class="outline-text-2" id="text-org27b4ca0">
-<p>
-[1] Mark Raasveldt and Pedro Holanda and Tim Gubner and Hannes M{\"u}hleisen, <i>Fair Benchmarking Considered Difficult</i>, 2018.</p>
-
-<p>
-[2] Samuel Williams and Andrew Waterman and David Patterson, <i>Roofline</i>, Communications of the ACM, 2009.</p>
+[1] Mazzoli, Francesco, <i>Beating the L1 cache with value speculation</i>, 2021.</p>
 </div>
 </div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Operational intensity is subtly different from arithmetic intensity, which is popular in Machine Learning.
-Arithmetic intensity includes the data scanned from caches, while operational intensity only includes DRAM
-(2)</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Though in fairness to DuckDB, they're probably aiming to saturate
-SSD bandwidths, which are around \(4.5\) GB/s.</p></div></div>
-
-
 </div>
-</div></div>
 <div id="postamble" class="status">
 <p class="author">Author: Sasha Krassovsky</p>
 <p class="date">Created: 2024-07-17 Wed 00:35</p>

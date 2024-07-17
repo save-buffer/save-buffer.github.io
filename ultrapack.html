@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-06-12 Wed 13:22 -->
+<!-- 2024-07-17 Wed 00:35 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ultrapacking: A Layer Over Bit-Packing</title>
@@ -233,21 +233,21 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org87cf43c">1. Introduction</a></li>
-<li><a href="#org44aebaf">2. Ultrapacking</a>
+<li><a href="#org910b5aa">1. Introduction</a></li>
+<li><a href="#orga079ea6">2. Ultrapacking</a>
 <ul>
-<li><a href="#org963b4cb">2.1. Choosing \(k\)</a></li>
+<li><a href="#orgc340a72">2.1. Choosing \(k\)</a></li>
 </ul>
 </li>
-<li><a href="#org7c5ffb0">3. Performance</a></li>
-<li><a href="#org1b72b09">4. Conclusion</a></li>
-<li><a href="#org4f7b11c">5. References</a></li>
+<li><a href="#orgc5b48aa">3. Performance</a></li>
+<li><a href="#orgcd7cd9f">4. Conclusion</a></li>
+<li><a href="#orgc1183ce">5. References</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org87cf43c" class="outline-2">
-<h2 id="org87cf43c"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-org910b5aa" class="outline-2">
+<h2 id="org910b5aa"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 When dealing with integer arrays, applications often perform some form of lightweight
@@ -288,8 +288,8 @@ savings. Notice that the space savings drop to \(0\) when \(n\) is a power of
 </div>
 </div>
 
-<div id="outline-container-org44aebaf" class="outline-2">
-<h2 id="org44aebaf"><span class="section-number-2">2.</span> Ultrapacking</h2>
+<div id="outline-container-orga079ea6" class="outline-2">
+<h2 id="orga079ea6"><span class="section-number-2">2.</span> Ultrapacking</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 As a motivating example, suppose we have \(n = 10\), and we want to compress a sequence of three
@@ -385,8 +385,8 @@ digits.
 </div>
 </div>
 
-<div id="outline-container-org963b4cb" class="outline-3">
-<h3 id="org963b4cb"><span class="section-number-3">2.1.</span> Choosing \(k\)</h3>
+<div id="outline-container-orgc340a72" class="outline-3">
+<h3 id="orgc340a72"><span class="section-number-3">2.1.</span> Choosing \(k\)</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 As we saw above, with \(n = 10\) and \(k = 3\), we have \(\frac{10}{3} = 3.33\) bits per value. Can we do better? 
@@ -428,8 +428,8 @@ We also bias the packing slightly to prefer smaller bundles.
 </div>
 </div>
 
-<div id="outline-container-org7c5ffb0" class="outline-2">
-<h2 id="org7c5ffb0"><span class="section-number-2">3.</span> Performance</h2>
+<div id="outline-container-orgc5b48aa" class="outline-2">
+<h2 id="orgc5b48aa"><span class="section-number-2">3.</span> Performance</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 To test this idea, I made a program that generates functions for all \(n\) up to \(255\), and
@@ -447,8 +447,8 @@ Nevertheless, \(3\) cycles/value is still billions of integers per second!
 </div>
 </div>
 
-<div id="outline-container-org1b72b09" class="outline-2">
-<h2 id="org1b72b09"><span class="section-number-2">4.</span> Conclusion</h2>
+<div id="outline-container-orgcd7cd9f" class="outline-2">
+<h2 id="orgcd7cd9f"><span class="section-number-2">4.</span> Conclusion</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 Ultrapacking provides a way to eek out a bit more space-savings over traditional bitpacking. Future
@@ -463,8 +463,8 @@ All code is available <a href="https://github.com/save-buffer/ultrapack">here</a
 </div>
 </div>
 
-<div id="outline-container-org4f7b11c" class="outline-2">
-<h2 id="org4f7b11c"><span class="section-number-2">5.</span> References</h2>
+<div id="outline-container-orgc1183ce" class="outline-2">
+<h2 id="orgc1183ce"><span class="section-number-2">5.</span> References</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 [1] Daniel Lemire and Leonid Boytsov, <i>Decoding Billions of Integers Per Second Through Vectorization</i>, arXiv, 2012.</p>
@@ -476,7 +476,7 @@ All code is available <a href="https://github.com/save-buffer/ultrapack">here</a
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Sasha Krassovsky</p>
-<p class="date">Created: 2024-06-12 Wed 13:22</p>
+<p class="date">Created: 2024-07-17 Wed 00:35</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
